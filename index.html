@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Name - Personal Website</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        /* Add smooth transitions for all elements */
+        * {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Mark Traquair</h1>
+        <nav>
+            <button class="tab-button active" data-tab="about">About</button>
+            <button class="tab-button" data-tab="projects">Projects</button>
+            <button class="tab-button" data-tab="blog">Blog</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="about" class="tab-content active">
+            <h2>About Me</h2>
+            <p>Hello! I'm a a chill dude passionate about ML.</p>
+        </section>
+
+        <section id="projects" class="tab-content">
+            <h2>My Projects</h2>
+            <div class="projects-grid">
+                <!-- Project cards will be added here via JavaScript -->
+            </div>
+        </section>
+
+        <section id="blog" class="tab-content">
+            <h2>Blog Posts</h2>
+            <div class="blog-posts">
+                <!-- Blog posts will be added here via JavaScript -->
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p> 🤗 Connect with me on
+            <a href="https://github.com/MarkProjectRepo" target="_blank">GitHub</a> | 
+            <a href="https://www.linkedin.com/in/mark-traquair" target="_blank">LinkedIn</a>
+            🫡
+        </p>
+    </footer>
+
+    <script src="content/blog-posts.js"></script>
+    <script src="scripts/main.js"></script>
+</body>
+</html> 
