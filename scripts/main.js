@@ -1,53 +1,276 @@
-// Add loading state functionality
-function setLoading(isLoading) {
-    const content = document.querySelector('main');
-    if (isLoading) {
-        content.style.opacity = '0.5';
-        content.style.pointerEvents = 'none';
-    } else {
-        content.style.opacity = '1';
-        content.style.pointerEvents = 'auto';
+document.addEventListener('DOMContentLoaded', () => {
+    initTabs();
+    loadInitialContent();
+    initBackgroundEffect();
+    const profileImage = document.getElementById('profileImage');
+    
+    if (profileImage) {
+        window.addEventListener('scroll', function() {
+            const scrollPosition = window.scrollY;
+            const windowHeight = window.innerHeight;
+            const imageRect = profileImage.getBoundingClientRect();
+            const imageCenter = imageRect.top + (imageRect.height / 2);
+            
+            // Calculate opacity based on image position
+            const opacity = 5*Math.max(0, Math.min(1, 1 - (scrollPosition / windowHeight)));
+            
+            profileImage.style.opacity = opacity;
+        });
+    }
+});
+
+function initTabs() {
+    const tabs = document.querySelectorAll('.tab-button');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+}
+
+function switchTab(tabId) {
+    // Handle blog post URLs
+    if (tabId.startsWith('blog/')) {
+        const slug = tabId.split('blog/')[1];
+        loadBlogPost(slug);
+        return;
+    }
+
+    // First check if the tab exists
+    const targetTab = document.getElementById(tabId);
+    if (!targetTab) {
+        console.error(`Tab ${tabId} not found`);
+        // Fallback to 'about' tab if the requested tab doesn't exist
+        tabId = 'about';
+    }
+
+    // Remove any existing blog post view
+    const blogPost = document.querySelector('.single-blog-post');
+    if (blogPost) {
+        blogPost.remove();
+    }
+
+    // Show all tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.style.display = '';
+    });
+
+    // Update buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabId);
+    });
+
+    // Update content sections
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === tabId);
+    });
+
+    // Update URL without page reload
+    window.history.pushState({tab: tabId}, '', `#${tabId}`);
+    
+    // Load content if not already loaded
+    loadTabContent(tabId);
+    
+    // Update document title
+    updateDocumentTitle(tabId);
+
+    // Show background effect and toggle when not in blog post
+    const canvas = document.getElementById('background-canvas');
+    const bgToggle = document.getElementById('bg-toggle');
+    if (canvas) canvas.style.opacity = localStorage.getItem('bgEffect') === 'off' ? '0' : '1';
+    if (bgToggle) bgToggle.style.display = 'block';
+}
+
+function initRouting() {
+    const path = window.location.pathname;
+    
+    if (path.startsWith('/blog/')) {
+        const slug = path.split('/blog/')[1];
+        window.history.replaceState(null, '', `/#blog/${slug}`);
+        loadBlogPost(slug);
+        return true;
+    }
+    return false;
+}
+
+async function loadBlogPost(slug) {
+    const post = blogPosts.find(p => p.slug === slug);
+    if (!post) {
+        const mainContent = document.querySelector('main');
+        mainContent.innerHTML = `
+            <div class="content-section">
+                <div class="error-message">Blog post not found</div>
+                <a href="/#blog" class="read-more">← Back to Blog</a>
+            </div>
+        `;
+        return;
+    }
+
+    // Clear any existing blog post container
+    const existingPost = document.querySelector('.single-blog-post');
+    if (existingPost) {
+        existingPost.remove();
+    }
+
+    // Show all tab contents but make them inactive
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.style.display = '';
+        content.classList.remove('active');
+    });
+
+    // Deactivate all tab buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Create blog post container
+    const mainContent = document.querySelector('main');
+    const blogPostContainer = document.createElement('div');
+    blogPostContainer.className = 'single-blog-post active';
+
+    // Hide background effect when showing blog post
+    const canvas = document.getElementById('background-canvas');
+    const bgToggle = document.getElementById('bg-toggle');
+    if (canvas) canvas.style.opacity = '0';
+    if (bgToggle) bgToggle.style.display = 'none';
+
+    try {
+        const response = await fetch(`/content/blog-posts/${post.file}`);
+        if (!response.ok) throw new Error(`Failed to load ${post.file}`);
+        const content = await response.text();
+        
+        const processedContent = post.format === 'markdown' 
+            ? markdownParser.parse(content)
+            : content;
+
+        blogPostContainer.innerHTML = `
+            <div class="content-section blog-reading-mode">
+                <a href="/#blog" class="back-link">← Back to Blog</a>
+                <article>
+                    <h1>${post.title}</h1>
+                    <time>${new Date(post.date).toLocaleDateString()}</time>
+                    <div class="blog-content">
+                        ${processedContent}
+                    </div>
+                </article>
+            </div>
+        `;
+        
+        mainContent.appendChild(blogPostContainer);
+        updateDocumentTitle(post.title);
+
+    } catch (error) {
+        console.error(`Error loading blog post:`, error);
+        blogPostContainer.innerHTML = `
+            <div class="content-section">
+                <div class="error-message">Failed to load blog post</div>
+                <a href="/#blog" class="read-more">← Back to Blog</a>
+            </div>
+        `;
     }
 }
 
-// Simulate dynamic content loading
-async function loadContent(tabId) {
-    setLoading(true);
+function loadInitialContent() {
+    const hash = window.location.hash.slice(1); // Remove the #
     
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 300));
+    if (hash.startsWith('blog/')) {
+        const slug = hash.split('blog/')[1];
+        loadBlogPost(slug);
+        return;
+    }
     
-    // Update active states
-    document.querySelectorAll('.tab-button').forEach(btn => 
-        btn.classList.toggle('active', btn.dataset.tab === tabId)
-    );
-    document.querySelectorAll('.tab-content').forEach(content => 
-        content.classList.toggle('active', content.id === tabId)
-    );
-    
-    setLoading(false);
+    // Handle empty hash or invalid tab
+    const validTabs = ['about', 'blog', 'projects'];
+    const initialTab = validTabs.includes(hash) ? hash : 'about';
+    switchTab(initialTab);
 }
 
-// Update tab switching functionality
-document.querySelectorAll('.tab-button').forEach(button => {
-    button.addEventListener('click', () => {
-        loadContent(button.dataset.tab);
-    });
+async function loadTabContent(tabId) {
+    const contentDiv = document.getElementById(tabId);
+    
+    // Check if the tab exists
+    if (!contentDiv) {
+        console.error(`Tab content div ${tabId} not found`);
+        return;
+    }
+    
+    // Only load if empty
+    if (!contentDiv.innerHTML.trim()) {
+        try {
+            if (tabId === 'blog') {
+                // Directly render blog posts
+                contentDiv.innerHTML = `
+                    <div class="content-section">
+                        <h2>Blog Posts</h2>
+                        <div class="blog-posts"></div>
+                    </div>
+                `;
+                await renderBlogPosts();
+            } else if (tabId === 'projects') {
+                // Directly render projects
+                contentDiv.innerHTML = `
+                    <div class="content-section">
+                        <h2>Projects</h2>
+                        <div class="projects-grid"></div>
+                    </div>
+                `;
+                renderProjects();
+            } else if (tabId === 'about') {
+                // Load about page content
+                try {
+                    const response = await fetch(`/about/index.html`);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    const content = await response.text();
+                    
+                    const temp = document.createElement('div');
+                    temp.innerHTML = content;
+                    const newContent = temp.querySelector('.content-section');
+                    
+                    if (newContent) {
+                        contentDiv.innerHTML = newContent.outerHTML;
+                    } else {
+                        throw new Error('Content section not found');
+                    }
+                } catch (error) {
+                    contentDiv.innerHTML = `
+                        <div class="content-section">
+                            <h2>About</h2>
+                            <p>Welcome to my portfolio website.</p>
+                        </div>
+                    `;
+                }
+            } else {
+                contentDiv.innerHTML = '<div class="content-section"><p>Content not available.</p></div>';
+            }
+        } catch (error) {
+            console.error('Error loading content:', error);
+            contentDiv.innerHTML = '<div class="content-section"><p>Error loading content. Please try again.</p></div>';
+        }
+    }
+}
+
+// Handle browser back/forward
+window.addEventListener('popstate', (e) => {
+    const hash = window.location.hash.slice(1);
+    if (hash.startsWith('blog/')) {
+        const slug = hash.split('blog/')[1];
+        loadBlogPost(slug);
+    } else {
+        const validTabs = ['about', 'blog', 'projects'];
+        const tab = validTabs.includes(hash) ? hash : 'about';
+        switchTab(tab);
+    }
 });
 
-// Add intersection observer for animations
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('fade-in');
-        }
-    });
-}, { threshold: 0.1 });
+function updateDocumentTitle(tabId) {
+    const capitalizedTab = tabId.charAt(0).toUpperCase() + tabId.slice(1);
+    document.title = `Mark Traquair - ${capitalizedTab}`;
+}
 
-// Render projects with animation
+// Keep your existing render functions
 function renderProjects() {
     const projectsGrid = document.querySelector('.projects-grid');
-    projectsGrid.innerHTML = ''; // Clear existing content
+    if (!projectsGrid) return;
+    
+    projectsGrid.innerHTML = '';
     
     projects.forEach(project => {
         const projectCard = document.createElement('div');
@@ -55,278 +278,224 @@ function renderProjects() {
         projectCard.innerHTML = `
             <h3>${project.title}</h3>
             <p>${project.description}</p>
-            <p class="technologies">
+            <div class="technologies">
                 ${project.technologies.map(tech => 
                     `<span class="tech-tag">${tech}</span>`
                 ).join('')}
-            </p>
-            <a href="${project.link}" target="_blank" class="project-link">View Project →</a>
+            </div>
+            <a href="${project.link}" class="project-link" target="_blank">View Project →</a>
         `;
         projectsGrid.appendChild(projectCard);
-        observer.observe(projectCard);
     });
 }
 
-// Render blog posts with animation
-function renderBlogPosts() {
+// ... (keep your existing blog-related functions) ... 
+
+async function renderBlogPosts() {
     const blogContainer = document.querySelector('.blog-posts');
-    blogContainer.innerHTML = ''; // Clear existing content
+    if (!blogContainer) return;
     
-    blogPosts.forEach(post => {
-        const blogPost = document.createElement('article');
-        blogPost.className = 'blog-post';
-        blogPost.innerHTML = `
-            <h3>${post.title}</h3>
-            <time>${new Date(post.date).toLocaleDateString()}</time>
-            <p>${post.content}</p>
-            <button class="read-more">Read More →</button>
-        `;
-        blogContainer.appendChild(blogPost);
-        observer.observe(blogPost);
-    });
-}
+    blogContainer.innerHTML = '';
+    
+    try {
+        for (const post of blogPosts) {
+            const blogPost = document.createElement('article');
+            blogPost.className = 'blog-post-preview';
 
-// Initialize content
-renderProjects();
-renderBlogPosts();
-
-// Add scroll-to-top button
-const scrollButton = document.createElement('button');
-scrollButton.className = 'scroll-top';
-scrollButton.innerHTML = '↑';
-document.body.appendChild(scrollButton);
-
-scrollButton.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-window.addEventListener('scroll', () => {
-    scrollButton.classList.toggle('visible', window.scrollY > 300);
-});
-
-// Replace the existing particle code with this new implementation
-class Particle {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.oldX = x;
-        this.oldY = y;
-        this.friction = 0.97;
-        this.gravity = 0;
-        this.mouseStrength = 0.15;
-        this.mouseRadius = 150;
-    }
-
-    update(mouseX, mouseY) {
-        // Verlet integration
-        const velocityX = (this.x - this.oldX) * this.friction;
-        const velocityY = (this.y - this.oldY) * this.friction;
-
-        // Save current position
-        this.oldX = this.x;
-        this.oldY = this.y;
-
-        // Mouse attraction
-        const dx = mouseX - this.x;
-        const dy = mouseY - this.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < this.mouseRadius) {
-            const force = (1 - distance / this.mouseRadius) * this.mouseStrength;
-            this.x += dx * force;
-            this.y += dy * force;
-        }
-
-        // Update position
-        this.x += velocityX;
-        this.y += velocityY + this.gravity;
-
-        // Screen wrapping
-        if (this.x < 0) this.x = window.innerWidth;
-        if (this.x > window.innerWidth) this.x = 0;
-        if (this.y < 0) this.y = window.innerHeight;
-        if (this.y > window.innerHeight) this.y = 0;
-        
-        // Update old position when wrapping to prevent elastic effect
-        if (Math.abs(this.x - this.oldX) > window.innerWidth/2) {
-            this.oldX = this.x;
-        }
-        if (Math.abs(this.y - this.oldY) > window.innerHeight/2) {
-            this.oldY = this.y;
-        }
-    }
-}
-
-const particleSystem = {
-    particles: [],
-    mouseX: 0,
-    mouseY: 0,
-    container: null,
-    count: 50,
-
-    init() {
-        // Create container
-        this.container = document.createElement('div');
-        this.container.className = 'particles';
-        document.body.appendChild(this.container);
-
-        // Create particles
-        for (let i = 0; i < this.count; i++) {
-            const x = Math.random() * window.innerWidth;
-            const y = Math.random() * window.innerHeight;
-            this.particles.push(new Particle(x, y));
+            blogPost.innerHTML = `
+                <h3><a href="/#blog/${post.slug}">${post.title}</a></h3>
+                <time>${new Date(post.date).toLocaleDateString()}</time>
+            `;
             
-            const element = document.createElement('div');
-            element.className = 'particle';
-            this.container.appendChild(element);
+            blogContainer.appendChild(blogPost);
         }
+    } catch (error) {
+        console.error(`Error loading blog posts:`, error);
+        blogContainer.innerHTML = `
+            <div class="error-message">Failed to load blog posts</div>
+        `;
+    }
+}
 
-        // Mouse move handler
-        document.addEventListener('mousemove', (e) => {
-            this.mouseX = e.clientX;
-            this.mouseY = e.clientY;
+function initBackgroundEffect() {
+    const canvas = document.createElement('canvas');
+    canvas.id = 'background-canvas';
+    document.body.insertBefore(canvas, document.body.firstChild);
+    
+    const toggle = document.createElement('button');
+    toggle.id = 'bg-toggle';
+    toggle.innerHTML = '🎨';
+    toggle.title = 'Toggle Background Effect';
+    document.body.appendChild(toggle);
+
+    const effect = new ParticleEffect(canvas);
+    
+    toggle.addEventListener('click', () => {
+        if (canvas.style.opacity === '0') {
+            canvas.style.opacity = '1';
+            effect.start();
+            localStorage.setItem('bgEffect', 'on');
+        } else {
+            canvas.style.opacity = '0';
+            effect.stop();
+            localStorage.setItem('bgEffect', 'off');
+        }
+    });
+
+    // Check user's previous preference
+    if (localStorage.getItem('bgEffect') !== 'off') {
+        effect.start();
+    } else {
+        canvas.style.opacity = '0';
+    }
+}
+
+class ParticleEffect {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.particles = [];
+        this.mouse = { x: 0, y: 0 };
+        this.isRunning = false;
+        
+        this.resize();
+        window.addEventListener('resize', () => this.resize());
+        window.addEventListener('mousemove', (e) => {
+            this.mouse.x = e.clientX;
+            this.mouse.y = e.clientY;
         });
 
-        // Start animation
-        this.animate();
-    },
+        // Create initial particles
+        for (let i = 0; i < 100; i++) {
+            this.particles.push(new Particle(
+                Math.random() * this.canvas.width,
+                Math.random() * this.canvas.height
+            ));
+        }
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    start() {
+        if (!this.isRunning) {
+            this.isRunning = true;
+            this.animate();
+        }
+    }
+
+    stop() {
+        this.isRunning = false;
+    }
 
     animate() {
-        // Update particles
-        this.particles.forEach((particle, index) => {
-            particle.update(this.mouseX, this.mouseY);
+        if (!this.isRunning) return;
+
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.particles.forEach(particle => {
+            // Update particle position based on mouse
+            const dx = this.mouse.x - particle.x;
+            const dy = this.mouse.y - particle.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
             
-            // Update DOM element position
-            const element = this.container.children[index];
-            element.style.transform = `translate(${particle.x}px, ${particle.y}px)`;
+            if (dist < 300) {
+                const force = (300 - dist) / 300;
+                particle.vx += (dx / dist) * force * 0.5;
+                particle.vy += (dy / dist) * force * 0.5;
+            }
+            
+            // Update and draw particle
+            particle.update();
+            particle.draw(this.ctx);
+            
+            // Connect nearby particles
+            this.particles.forEach(other => {
+                const dx = other.x - particle.x;
+                const dy = other.y - particle.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if (dist < 100) {
+                    this.ctx.beginPath();
+                    this.ctx.strokeStyle = `rgba(100, 100, 255, ${0.2 * (1 - dist / 100)})`;
+                    this.ctx.lineWidth = 1;
+                    this.ctx.moveTo(particle.x, particle.y);
+                    this.ctx.lineTo(other.x, other.y);
+                    this.ctx.stroke();
+                }
+            });
         });
 
         requestAnimationFrame(() => this.animate());
     }
-};
-
-// Update particle styles
-const particleStyles = `
-.particles {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: -1;
 }
 
-.particle {
-    position: absolute;
-    width: 3px;
-    height: 3px;
-    background: var(--secondary-color);
-    border-radius: 50%;
-    box-shadow: 0 0 10px var(--secondary-color);
-    transition: transform 0.05s linear;
-    opacity: 0.6;
-}
-`;
+class Particle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.size = Math.random() * 2 + 1;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.originalX = x;
+        this.originalY = y;
+    }
 
-// Update initialization
-document.addEventListener('DOMContentLoaded', () => {
-    // Replace particlesConfig.init() with:
-    particleSystem.init();
-    
-    initTiltEffect();
-    initMagneticButtons();
-    
-    // Add particle styles
-    const style = document.createElement('style');
-    style.textContent = particleStyles;
-    document.head.appendChild(style);
-});
-
-// Add 3D tilt effect to project cards
-function initTiltEffect() {
-    document.querySelectorAll('.project-card').forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            
-            const rotateX = (y - centerY) / 10;
-            const rotateY = (centerX - x) / 10;
-            
-            card.style.transform = `
-                perspective(1000px)
-                rotateX(${rotateX}deg)
-                rotateY(${rotateY}deg)
-                scale3d(1.05, 1.05, 1.05)
-            `;
-        });
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
         
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = '';
-        });
-    });
-}
-
-// Smooth scroll effect
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        document.querySelector(this.getAttribute('href')).scrollIntoView({
-            behavior: 'smooth'
-        });
-    });
-});
-
-// Add magnetic effect to buttons
-function initMagneticButtons() {
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('mousemove', (e) => {
-            const rect = button.getBoundingClientRect();
-            const x = e.clientX - rect.left - rect.width / 2;
-            const y = e.clientY - rect.top - rect.height / 2;
-            
-            button.style.transform = `translate(${x * 0.3}px, ${y * 0.3}px)`;
-        });
+        // Add friction
+        this.vx *= 0.95;
+        this.vy *= 0.95;
         
-        button.addEventListener('mouseleave', () => {
-            button.style.transform = '';
-        });
-    });
+        // Return to original position
+        const dx = this.originalX - this.x;
+        const dy = this.originalY - this.y;
+        this.vx += dx * 0.01;
+        this.vy += dy * 0.01;
+        
+        // Bounce off edges
+        if (this.x < 0 || this.x > window.innerWidth) this.vx *= -1;
+        if (this.y < 0 || this.y > window.innerHeight) this.vy *= -1;
+    }
+
+    draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(100, 100, 255, 0.5)';
+        ctx.fill();
+    }
 }
 
-// Enhanced content loading with animations
-async function loadContent(tabId) {
-    const content = document.getElementById(tabId);
+// When displaying blog posts in the preview list
+async function displayBlogPosts() {
+    const blogContainer = document.querySelector('.blog-posts');
     
-    // Fancy exit animation
-    document.querySelectorAll('.tab-content.active').forEach(activeContent => {
-        activeContent.style.transform = 'scale(0.8)';
-        activeContent.style.opacity = '0';
-    });
-    
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Update active states
-    document.querySelectorAll('.tab-button').forEach(btn => 
-        btn.classList.toggle('active', btn.dataset.tab === tabId)
-    );
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-        content.style.transform = '';
-        content.style.opacity = '';
-    });
-    
-    // Fancy entrance animation
-    content.classList.add('active');
-    content.style.transform = 'scale(0.8)';
-    content.style.opacity = '0';
-    
-    requestAnimationFrame(() => {
-        content.style.transform = 'scale(1)';
-        content.style.opacity = '1';
-    });
-} 
+    for (const post of blogPosts) {
+        const response = await fetch(`/content/blog-posts/${post.file}`);
+        const content = await response.text();
+        
+        let preview;
+        if (post.format === 'markdown') {
+            preview = markdownParser.getPreview(content, post.previewLength);
+        } else {
+            // For HTML posts, similar truncation logic
+            const textContent = content.replace(/<[^>]+>/g, '');
+            preview = textContent.substr(0, post.previewLength).replace(/\s+\S*$/, '') + '...';
+        }
+
+        const postElement = document.createElement('div');
+        postElement.className = 'blog-post-preview';
+        postElement.innerHTML = `
+            <h3>${post.title}</h3>
+            <div class="date">${post.date}</div>
+            ${preview}
+            <a href="/blog/${post.slug}">Read more...</a>
+        `;
+        
+        blogContainer.appendChild(postElement);
+    }
+}
