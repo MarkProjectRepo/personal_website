@@ -74,9 +74,17 @@ const markdownParser = {
 
 const projects = [
     {
-        title: "Project 1",
-        description: "A cool project that does something amazing",
-        technologies: ["JavaScript", "HTML", "CSS"],
-        link: "https://github.com/yourusername/project1"
+        title: "Runelite - Py4j bindings (WIP)",
+        description: "Plugin + bindings to collect and interact with live data from a Runelite instance (educational), blog post coming soon",
+        technologies: ["Python", "Java", "Py4j"],
+        link: "https://github.com/MarkProjectRepo/runelite",
+        image: "/assets/runelite.png"
+    },
+    {
+        title: "Meal Planner",
+        description: "Quick 2 hour project with Cursor to automate meal planning using Ollama",
+        technologies: ["Python", "Ollama", "LLMs", "FastHTML"],
+        link: "https://github.com/MarkProjectRepo/meal_planner",
+        image: "/assets/meal_planner.png"
     }
 ]; 

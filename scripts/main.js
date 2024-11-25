@@ -276,15 +276,28 @@ function renderProjects() {
         const projectCard = document.createElement('div');
         projectCard.className = 'project-card';
         projectCard.innerHTML = `
-            <h3>${project.title}</h3>
-            <p>${project.description}</p>
-            <div class="technologies">
-                ${project.technologies.map(tech => 
-                    `<span class="tech-tag">${tech}</span>`
-                ).join('')}
+            <div class="project-card-content" style="position: relative; z-index: 1;">
+                <h3>${project.title}</h3>
+                <p>${project.description}</p>
+                <div class="technologies">
+                    ${project.technologies.map(tech => 
+                        `<span class="tech-tag">${tech}</span>`
+                    ).join('')}
+                </div>
+                <a href="${project.link}" class="project-link" target="_blank">View Project →</a>
             </div>
-            <a href="${project.link}" class="project-link" target="_blank">View Project →</a>
+            <div class="project-card-bg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${project.image}'); background-size: cover; background-position: center; opacity: 0; z-index: 0; transition: opacity 0.3s ease;"></div>
         `;
+
+        // Add hover event listeners
+        projectCard.addEventListener('mouseenter', () => {
+            projectCard.querySelector('.project-card-bg').style.opacity = '0.15';
+        });
+        
+        projectCard.addEventListener('mouseleave', () => {
+            projectCard.querySelector('.project-card-bg').style.opacity = '0';
+        });
+
         projectsGrid.appendChild(projectCard);
     });
 }

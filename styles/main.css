@@ -806,7 +806,7 @@ h2 {
 .blog-post-preview time {
     color: #666;
     font-size: 0.9rem;
-} 
+}
 
 .fade-scroll {
     opacity: 1;
@@ -815,4 +815,17 @@ h2 {
 
 .profile-image-wrapper {
     position: relative;
-} 
+}
+
+.project-image {
+    width: 60%;
+    border-radius: 8px;
+    margin-top: 1rem;
+    float: right;
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
