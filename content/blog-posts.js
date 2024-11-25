@@ -1,21 +1,13 @@
 // Blog post metadata
 const blogPosts = [
     {
-        title: "Real Post",
+        title: "Real Post (just kidding, it's a placeholder but some coming soon)",
         date: "2024-11-23",
         file: "2024-11-23-real-post.html",
         format: 'html',
         slug: 'real-post',
         previewLength: 150
     },
-    {
-        title: "First Post",
-        date: "2024-03-20",
-        file: "subdir/2024-03-20-first-post.md",
-        format: 'markdown',
-        slug: 'first-post',
-        previewLength: 150
-    }
 ];
 
 // Keep markdown parser for processing .md files
@@ -75,7 +67,7 @@ const markdownParser = {
 const projects = [
     {
         title: "Runelite - Py4j bindings (WIP)",
-        description: "Plugin + bindings to collect and interact with live data from a Runelite instance (educational), blog post coming soon",
+        description: "Plugin + bindings to collect and interact with live data from a Runelite instance (open-source client for MMORPG RuneScape)<br>Java -> Python<br><br>Blog post coming soon",
         technologies: ["Python", "Java", "Py4j"],
         link: "https://github.com/MarkProjectRepo/runelite",
         image: "/assets/runelite.png"
