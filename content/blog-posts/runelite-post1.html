@@ -12,7 +12,7 @@
 </p>
 
 <p>
-    The problem space in Runescape is shockingly ideal for something like reinforcement learning (RL), as it's extremely repetitive (27 skills, each with a level cap of 99 taking anywhere from 10s of full concetration hours to 100s of hours to complete).
+    The problem space in Runescape is shockingly ideal for something like reinforcement learning (RL), as it's extremely repetitive (27 skills, each with a level cap of 99 taking anywhere from 10s of full concentration hours to 100s of hours to complete).
     Skills you can train are mostly ranked in difficulty by how much attention you need to pay to the game while training, some only need you to take an action every 20 minutes, whereas others are repetitive actions basically as fast as you can execute them precisely.
 </p>
 <div style="display: flex; justify-content: space-between;">
@@ -38,7 +38,7 @@
     (e.g. playing  a minigame would probably require tracking different assets vs training something like the <a href="https://oldschool.runescape.wiki/w/Runecrafting" class="blog-link">runecrafting</a> skill).
     <br>
     Almost all objects are made available through the runelite API <a href="https://static.runelite.net/api/runelite-api/" class="blog-link">here</a>, and plugins specifically can access the client, the UI, and has permissions to add on key/mouse listeners.
-    So, what's visible on the screen, what's the players health, inventory, equipment, etc. are all accessible. 
+    So, what's visible on the screen, the player's health, inventory, equipment, etc. are all accessible. 
     <br>
     But, we're still locked in to Java, and pretty obviously as an MLE I have a bias towards Python (and so does the entire ML community).
     I've been working with pyspark a lot as well, so I keep seeing py4j, so how could I not use it?
