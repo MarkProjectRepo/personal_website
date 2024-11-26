@@ -230,6 +230,10 @@ footer a {
     transform: translateX(5px);
 }
 
+.blog:a {
+    color: #00cec9;
+}
+
 .read-more {
     background: none;
     border: none;
@@ -603,7 +607,7 @@ h2 {
 }
 
 .blog-reading-mode .back-link {
-    color: #666;
+    color: var(--secondary-color);
     text-decoration: none;
     display: inline-block;
     margin-bottom: 2rem;
@@ -652,7 +656,6 @@ h2 {
 }
 
 .blog-reading-mode .blog-content a {
-    color: #666;
     text-decoration: underline;
     transition: color 0.3s ease;
 }
@@ -828,4 +831,24 @@ h2 {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+figure {
+    border: thin #c0c0c0 solid;
+    display: flex;
+    flex-flow: column;
+    padding: 5px;
+    max-width: 220px;
+    margin: auto;
+  }
+  
+figure img {
+    max-width: 220px;
+    max-height: 150px;
+}
+  
+figcaption {
+    font: italic smaller sans-serif;
+    padding: 3px;
+    text-align: center;
 }

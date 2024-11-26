@@ -1,13 +1,13 @@
 // Blog post metadata
 const blogPosts = [
     {
-        title: "Real Post (just kidding, it's a placeholder but some coming soon)",
-        date: "2024-11-23",
-        file: "2024-11-23-real-post.html",
+        title: "Py4j - Runelite Plugin - Part 1",
+        date: "2024-11-25",
+        file: "runelite-post1.html",
         format: 'html',
-        slug: 'real-post',
+        slug: 'runelite-post1',
         previewLength: 150
-    },
+    }
 ];
 
 // Keep markdown parser for processing .md files

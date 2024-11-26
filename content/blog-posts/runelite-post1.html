@@ -1,0 +1,98 @@
+<article class="blog">
+
+<h3>Background on Runescape</h3>
+<p>Runescape is a long standing MMO running on Java, and Runelite is a popular open source client for it. 
+    I've been playing it casually for years (actually since I was in elementary school).
+    A major change in how it was played came when unofficial clients started coming that hook in to the game's internal API and enabled developers to create plugins.
+</p>
+<p>
+    Originally it was closed-source <a href="https://oldschool.runescape.wiki/w/OSBuddy">OSBuddy</a>, which was controversial as it was essentially a competitive advantage locked behind a paywall separate from the official Jagex game.
+    This was later succeeded by <a href="https://oldschool.runescape.wiki/w/RuneLite">RuneLite</a>, which was open-source and free.
+    Written in Java, it allowed devs to create plugins like <a href="https://runelite.net/plugin-hub/show/quest-helper">Quest Helper</a> making it so you hardly have to think while completing almost all the 170 individual quest lines.
+</p>
+
+<p>
+    The problem space in Runescape is shockingly ideal for something like reinforcement learning (RL), as it's extremely repetitive (27 skills, each with a level cap of 99 taking anywhere from 10s of full concetration hours to 100s of hours to complete).
+    Skills you can train are mostly ranked in difficulty by how much attention you need to pay to the game while training, some only need you to take an action every 20 minutes, whereas others are repetitive actions basically as fast as you can execute them precisely.
+</p>
+<div style="display: flex; justify-content: space-between;">
+<figure>
+    <img src="https://oldschool.runescape.wiki/images/Tick_manipulation_-_cut-eat_Fishing.gif?45b54" alt="Tick Manipulation">
+    <figcaption>Example of high-intensity click-intensive training (tick manipulation)</figcaption>
+</figure>
+<figure>
+    <img src="https://i.imgur.com/HtRYDNV.gif" alt="Sandcrabs">
+    <figcaption>Example of low-intensity training (afk combat)</figcaption>
+</figure>
+</div>
+<p>
+    No matter the training, it's a lot of clicking and a lot of the same actions repeated over and over.
+    This has always struck me as a learning opportunity for diving in to RL in a real application.
+</p>
+<em style="font-size: 0.8em;">Word to the wise: Runescape does not condone automation, and botting is a bannable offense. While going down this road, I'm only interested in the data collection and viability, and won't deploy any algorithms in the main game.</em>
+
+<h3>Java and Runelite</h3>
+<p>
+    Wanting to collect data on the game while I play, there aren't really any options that exist to date, plugin or not. 
+    Additionally, for whatever downstream task the data would ideally be pretty customizable 
+    (e.g. playing  a minigame would probably require tracking different assets vs training something like the <a href="https://oldschool.runescape.wiki/w/Runecrafting" class="blog-link">runecrafting</a> skill).
+    <br>
+    Almost all objects are made available through the runelite API <a href="https://static.runelite.net/api/runelite-api/" class="blog-link">here</a>, and plugins specifically can access the client, the UI, and has permissions to add on key/mouse listeners.
+    So, what's visible on the screen, what's the players health, inventory, equipment, etc. are all accessible. 
+    <br>
+    But, we're still locked in to Java, and pretty obviously as an MLE I have a bias towards Python (and so does the entire ML community).
+    I've been working with pyspark a lot as well, so I keep seeing py4j, so how could I not use it?
+</p>
+<h3>Py4j - Plugin</h3>
+<p>
+Easier than you'd expect - starting the py4j server is essentially a matter of one import and sets us up to access all the java goodness from our familiar territory of python.
+<pre><code>[...]
+import net.runelite.client.plugins.PluginDescriptor;
+import py4j.GatewayServer;
+import lombok.Getter;
+
+@PluginDescriptor(
+	name = "Tracking some data",
+	description = "Track n whack",
+	tags = {}
+)
+
+@Slf4j
+public class NotAgility extends Plugin
+{
+    @Getter
+    private Client client;
+    private GatewayServer server;
+
+    @Override
+    public void startUp()
+    {
+        server = new GatewayServer(this);
+        server.start();
+    }
+    [...]
+</code></pre>
+
+From python, we can now access the java objects.
+
+<pre><code>Python 3.13.0 (main, Oct  7 2024, 05:02:14) [Clang 15.0.0 (clang-1500.3.9.4)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from py4j.java_gateway import JavaGateway, GatewayParameters
+>>> gateway = JavaGateway(gateway_parameters=GatewayParameters(auto_field=True))
+>>> client = gateway.entry_point.getClient()
+>>> dir(client)
+['$assertionsDisabled', 'ABORT', 'ALLBITS', 'BOTTOM_ALIGNMENT', 'CENTER_ALIGNMENT', 'DRAW_2D_ALL', 'DRAW_2D_NONE', 'DRAW_2D_OTHERS', 'DRAW_2D_OVERHEAD_TEXT' [...]
+</code></pre>
+
+For now, this gets us into the club, but developing from here is a bit of a pain. 
+We don't have any doc strings, the objects if not primitives are just things like <code>JavaObject id=o166813</code>, if you call dir() on them you can see the fields, but it's not clear what any of them are or what they return.
+<br><br>
+I'm gonna cover my approach to dealing with this in the next post, as it's been a bit of a journey. For now, I just wanted to cover some groundwork and we can later focus on the more fun stuff!
+</p>
+<h3>Posts to come</h3>
+<ul>
+    <li>Defining the IDE friendly interface between Java and Python</li>
+    <li>Collecting data on the game</li>
+    <li>More as I continue working on it!</li>
+</ul>
+</article>
