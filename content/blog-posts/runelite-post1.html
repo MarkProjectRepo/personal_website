@@ -52,25 +52,25 @@ import py4j.GatewayServer;
 import lombok.Getter;
 
 @PluginDescriptor(
-	name = "Tracking some data",
-	description = "Track n whack",
-	tags = {}
+  name = "Tracking some data",
+  description = "Track n whack",
+  tags = {}
 )
 
 @Slf4j
 public class NotAgility extends Plugin
 {
-    @Getter
-    private Client client;
-    private GatewayServer server;
+  @Getter
+  private Client client;
+  private GatewayServer server;
 
-    @Override
-    public void startUp()
-    {
-        server = new GatewayServer(this);
-        server.start();
-    }
-    [...]
+  @Override
+  public void startUp()
+  {
+    server = new GatewayServer(this);
+    server.start();
+  }
+[...]
 </code></pre>
 
 From python, we can now access the java objects.
@@ -91,7 +91,7 @@ I'm gonna cover my approach to dealing with this in the next post, as it's been 
 </p>
 <h3>Posts to come</h3>
 <ul>
-    <li>Defining the IDE friendly interface between Java and Python</li>
+    <li><a href="/#blog/runelite-post2">Defining the IDE friendly interface between Java and Python</a></li>
     <li>Collecting data on the game</li>
     <li>More as I continue working on it!</li>
 </ul>
