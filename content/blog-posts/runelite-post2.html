@@ -1,0 +1,130 @@
+<article class="blog">
+
+<h3>Dev Environment</h3>
+<p>
+    So, prior we setup our access to the game's internal API, we can now start collecting data.
+    The thing is, for every class we access, we don't really have any hints to the contents unless we go back and forth from the docs.
+    I don't really know what I want to use, and the environments I go into are pretty dynamic with a ton of different class 
+    elements I'd need to access depending on the task, so it would be like coding in the stone ages. We have IDEs for a reason!
+</p>
+<p>
+    The <a href="https://static.runelite.net/api/runelite-api/net/runelite/api/Client.html">Client class</a> ends up looking like this in the IDE.
+</p>
+<figure class="code-figure">
+    <img src="/assets/py4j_docstring.png" alt="Screenshot of the blank docstring for the java Client class from py4j">
+    <figcaption>What methods do I have access to?</figcaption>
+</figure>
+<p>
+    Far from ideal. According to the docs, I can access everything from the messages in chat, to details on the player status (e.g. health, levels, items)
+    With the facts that we have access to each element and the runelite API is pretty well documented & commented, with modern tooling like Cursor, we can easily make some simple wrappers.
+</p>
+<h3>Creating a loose Python wrapper</h3>
+<p>
+    So, let's stick with our focus on the Client class. The goal will be to, whenever possible, call the underlying Java methods, but maintain pythonic
+    bindings so we can 1) carry over the docstrings and 2) not worry about re-implementing any logic that already exists.
+</p>
+
+<p>Given the class definition from the client:</p>
+
+<pre><code class="language-java">/**
+ * Represents the RuneScape client.
+ */
+public interface Client extends OAuthApi, GameEngine {
+    /**
+     * Calculates the total level from real skill levels.
+     *
+     * @return the total level
+     */
+    int getTotalLevel();
+    [...]
+}</code></pre>
+
+<p>We can create a Python wrapper:</p>
+
+<pre><code class="language-python">class Client:
+    """
+    Wrapper for the RuneScape client.
+    """
+
+    def __init__(self, client):
+        self.client = client
+    
+    def get_total_level(self) -> int:
+        """
+        Calculates the total level from real skill levels.
+
+        Returns:
+            int: The total level.
+        """
+        return self.client.getTotalLevel()</code></pre>
+
+<p>And we run this in python:</p>
+
+<pre><code class="language-python"># example.py
+from runelite_python.java.api.client import Client
+from py4j.java_gateway import JavaGateway, GatewayParameters
+
+gateway = JavaGateway()
+instance = gateway.entry_point
+jclient = instance.getClient()
+
+client = Client(jclient)
+
+print(f"Total level: {client.get_total_level()}")</code></pre>
+
+<pre><code class="output">(runelite-python) runelite_python % uv run example.py
+Total level: 2075
+
+<img src="/assets/total_level.png" alt="Screenshot of my character's total level (2075)">
+(real value)
+</code></pre>
+
+<p>
+    Hooray! Now we can carry over what we want and access essentially everything we want.
+    Obviously still a little bit janky (not a fan of the client retrieval and wrapping). But I made a <a href="https://github.com/MarkProjectRepo/runelite/blob/master/runelite-python/src/runelite_python/client/client.py">little helper class</a> to manage
+    the connection to the JVM and the retrieval of the client. Finally, the last sugar we'll add for this phase
+    is a simple decorator to make sure we get the right types of objects.
+
+    <pre><code class="language-python">def wrap_getter(wrapper_class):
+    """
+    A decorator to wrap the return type of a function into a specified class.
+
+    Args:
+        wrapper_class (type): The class to wrap the return type with.
+
+    Returns:
+        function: The decorated function with wrapped return type.
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            return wrapper_class(result)
+        return wrapper
+    return decorator</code></pre>
+
+    With a little preview of it's use in the prior helper class, <br>instead of <code>instance.getClient();Client(jclient)</code>, we can now do <code>ClientGateway().get_client()</code>
+    <br>Since in our ClientGateway we centralize the management of the Gateway and can just access our instance directly.
+    <pre><code class="language-python">class ClientGateway:
+    def __init__(self):
+        self.gateway = JavaGateway()
+        self.instance = self.gateway.entry_point
+        self.enum_manager = EnumManager(self.gateway)
+
+    @wrap_getter(Client)
+    def get_client(self) -> Client:
+        return self.instance.getClient()</code></pre>
+    </code></pre>
+</p>
+<p>
+    So, with this pattern in mind (encapsulate Java classes/methods in a Python class), we can take this idea and allow Cursor to run with it.
+    <figure class="code-figure">
+        <img src="https://i.imgur.com/QWArZWh.gif" alt="Screenshot of Cursor generating a wrapper for the Client class">
+        <figcaption>Cursor generating a wrapper for the Client class</figcaption>
+    </figure>
+
+    That makes this... too easy. So, a lot of conversions to be done, next we'll cover the games tick system (0.6s) and what/how we'll collect according to that!
+    <br>
+    Take a look at the <a href="https://github.com/MarkProjectRepo/runelite/blob/master/runelite-python/src/runelite_python/java/api/">Github</a>
+    for a preview of the conversions + some previews of what's to come.
+</p>
+</article>

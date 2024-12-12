@@ -342,18 +342,22 @@ h2 {
 }
 
 .blog-content pre {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 1rem;
+    background: #1a1a1a;
+    padding: 1.5rem;
     border-radius: 8px;
     overflow-x: auto;
-    margin: 1rem 0;
+    margin: 1.5rem 0;
+    border: 1px solid var(--glass-effect);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .blog-content pre code {
     background: none;
     padding: 0;
-    border-radius: 0;
-    display: block;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.95em;
+    line-height: 1.6;
+    color: #e0e0e0;
 }
 
 .blog-content ul, .blog-content ol {
@@ -767,7 +771,7 @@ h2 {
 }
 
 .interests-section li:before {
-    content: "→";
+    content: "���";
     position: absolute;
     left: 0;
     color: #666;
@@ -834,21 +838,51 @@ h2 {
 }
 
 figure {
-    border: thin #c0c0c0 solid;
-    display: flex;
-    flex-flow: column;
-    padding: 5px;
-    max-width: 220px;
-    margin: auto;
-  }
+    border: thin var(--glass-effect) solid;
+    padding: 10px;
+    margin: 1rem 0;
+    background: var(--card-bg);
+    border-radius: 8px;
+    width: 100%;
+    max-width: 100%;
+}
   
 figure img {
-    max-width: 220px;
-    max-height: 150px;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    background: #1a1a1a;
+    padding: 1rem;
 }
   
 figcaption {
-    font: italic smaller sans-serif;
-    padding: 3px;
+    font-style: italic;
+    font-size: 0.9rem;
+    padding: 0.5rem 0 0;
     text-align: center;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+/* Add styles for the side-by-side figures */
+.figure-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    margin: 1.5rem 0;
+}
+
+.figure-container figure {
+    flex: 1;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .figure-container {
+        flex-direction: column;
+    }
+    
+    .figure-container figure {
+        max-width: 100%;
+    }
 }
