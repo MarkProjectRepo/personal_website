@@ -1,15 +1,15 @@
 // Blog post metadata
 const blogPosts = [
     {
-        title: "Encapsulating Java classes in Python",
-        date: "2024-12-10",
+        title: "Encapsulating Java classes in Python (Runelite series pt.2)",
+        date: "2024-12-12",
         file: "runelite-post2.html",
         format: 'html',
         slug: 'runelite-post2',
         previewLength: 150
     },
     {
-        title: "Py4j - Java -> Python Runelite Plugin",
+        title: "Py4j - Java -> Python Runelite Plugin (Runelite series pt.1)",
         date: "2024-11-25",
         file: "runelite-post1.html",
         format: 'html',
