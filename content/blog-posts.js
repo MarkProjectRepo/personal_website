@@ -77,7 +77,7 @@ const projects = [
         title: "Runelite - Py4j bindings (WIP)",
         description: "Plugin + bindings to collect and interact with live data from a Runelite instance (open-source client for MMORPG RuneScape)<br>Java -> Python<br><br>Blog post coming soon",
         technologies: ["Python", "Java", "Py4j"],
-        link: "https://github.com/MarkProjectRepo/runelite",
+        link: "https://github.com/MarkProjectRepo/runelite-python/tree/main",
         image: "/assets/runelite.png"
     },
     {
