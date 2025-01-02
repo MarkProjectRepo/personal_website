@@ -1,6 +1,14 @@
 // Blog post metadata
 const blogPosts = [
     {
+        title: "Ollama OSRS",
+        date: "2024-12-18",
+        file: "ollama-osrs.html",
+        format: 'html',
+        slug: 'ollama-osrs',
+        previewLength: 150
+    },
+    {
         title: "Encapsulating Java classes in Python (Runelite series pt.2)",
         date: "2024-12-12",
         file: "runelite-post2.html",
@@ -17,6 +25,22 @@ const blogPosts = [
         previewLength: 150
     }
 ];
+const projects = [
+    {
+        title: "Runelite - Py4j bindings (WIP)",
+        description: "Plugin + bindings to collect and interact with live data from a Runelite instance (open-source client for MMORPG RuneScape)<br>Java -> Python<br><br>Blog post coming soon",
+        technologies: ["Python", "Java", "Py4j"],
+        link: "https://github.com/MarkProjectRepo/runelite-python/tree/main",
+        image: "/assets/runelite.png"
+    },
+    {
+        title: "Meal Planner",
+        description: "Quick 2 hour project with Cursor to automate meal planning using Ollama",
+        technologies: ["Python", "Ollama", "LLMs", "FastHTML"],
+        link: "https://github.com/MarkProjectRepo/meal_planner",
+        image: "/assets/meal_planner.png"
+    }
+]; 
 
 // Keep markdown parser for processing .md files
 const markdownParser = {
@@ -71,20 +95,3 @@ const markdownParser = {
         return this.parse(md, length);
     }
 };
-
-const projects = [
-    {
-        title: "Runelite - Py4j bindings (WIP)",
-        description: "Plugin + bindings to collect and interact with live data from a Runelite instance (open-source client for MMORPG RuneScape)<br>Java -> Python<br><br>Blog post coming soon",
-        technologies: ["Python", "Java", "Py4j"],
-        link: "https://github.com/MarkProjectRepo/runelite-python/tree/main",
-        image: "/assets/runelite.png"
-    },
-    {
-        title: "Meal Planner",
-        description: "Quick 2 hour project with Cursor to automate meal planning using Ollama",
-        technologies: ["Python", "Ollama", "LLMs", "FastHTML"],
-        link: "https://github.com/MarkProjectRepo/meal_planner",
-        image: "/assets/meal_planner.png"
-    }
-]; 

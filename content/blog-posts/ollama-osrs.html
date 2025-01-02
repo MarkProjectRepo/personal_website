@@ -1,0 +1,164 @@
+<h3>Fish lvl?</h3>
+<img src="assets/fishing_lvl.jpg" alt="Players in Draynor Village, one asks for fishing level and after saying theirs everyone responds nice" style="width: auto; height: 320px; object-fit: contain;">
+<p>Well, I've said in other places I'm still interested in NLP inclusively of LLMs, so inevitably this had to come. Time to hook in Ollama to runescape.</p>
+<p>I know everyone's thinking it "Why can't MMOs stop being social?", well we can solve that. We can aim to experiment with how to best get llms to respond when someone addresses us, or maybe engage with them 🤔</p>
+
+<h3>Baseline Check</h3>
+<p>So first, I want to check if any of the models out of the box can do well in just chatting like a player or if they know anything about the game.</p>
+<p>Using Ollama and OpenWebUI, it's pretty easy to test out multiple models on a task, so let's setup a baseline prompt we'll test out</p>
+<pre><code>You're a player interacting in the world of runescape. 
+You're trying to blend in with the crowd and go with what's being said to you, and will match the energy of whatever is being said. 
+Keep your responses extremely brief, use common acronyms, make sure you aren't suspicious (in this context, being suspicious means speaking verbosely).
+    
+You'll need to know some terminology and context from the game, so here's some examples:
+    Wildy: Wilderness, a pvp zone where you are in danger of being attacked by other players and losing all items your carrying
+    gf: Either good fight (said after a fight), or girlfriend, depending on the context (something like buying gf -> girlfriend, good fight is after someone else says it to you (gf))
+    lure: A type of social engineering where another player tries to cheat another player out of their items either by bringing them to the wildy/wilderness or just in trades
+
+Keep it light, not every message you respond to will be directed at you, but you can decide if you want to respond.
+</code></pre>
+
+<p>Just covering some basics like minor lingo etc, but really what I want to make sure we see is we have
+<li>Non-cringey responses with weird acronyms or language</li>
+<li>Some basic knowledge of the game</li>
+<li>Brevity</li>
+And with that we'll ideally see how we perform out of the box. To experiment, I'll try out LLama3.2-11b, Llama3.1-8b, Qwen2.5-14b, Mistral-7b, llava-13b.
+<br><br>Remember, we're mostly vibing it out, this is technically one of those tests where there "are no wrong answers", but based on size (read as: speed/performance)+ personal preference we'll decide what we move forward with.
+<br><br>The prompts are either bait (e.g. scams), game knowledge questions, or just chatting (indeterminate responses).
+</p>
+<div class="table-container">
+    <table>
+        <tr>
+            <th>Text</th>
+            <th>LLama3.2-vision:8b</th>
+            <th>LLama3.1-8b</th>
+            <th>llava-13b</th>
+            <th>Qwen2.5-14b</th>
+            <th>Mistral-7b</th>
+        </tr>
+        <tr>
+            <td><span style="color: var(--secondary-color)">Buying gf, 15k</span> (chatting)</td>
+            <td>GF! 10k lol</td>
+            <td>GF wud do lol</td>
+            <td>GF 15k</td>
+            <td>Alright, heading there now.</td>
+            <td>15k gf confirmed.</td>
+        </tr>
+        <tr>
+            <td><span style="color: var(--secondary-color)">Anyone wanna go wildy?</span> (scam/chatting)</td>
+            <td>IDK, dont have a pking setup rn</td>
+            <td>Yeah IDK</td>
+            <td>gf</td>
+            <td>Sure, let's hit up the Wildy! 👍</td>
+            <td>Sure thing mate, always up for some PvP action!</td>
+        </tr>
+        <tr>
+            <td><span style="color: var(--secondary-color)">Free armor trimming!</span> (scam)</td>
+            <td>Nice perk TBH!</td>
+            <td>nice one, mate!</td>
+            <td>Gf</td>
+            <td>Nice one! Let's go</td>
+            <td>Sweet, thanks bro! Keeping my gear in check is key.</td>
+        </tr>
+        <tr>
+            <td><span style="color: var(--secondary-color)">Anybody know who Duradel is?</span> (game knowledge)</td>
+            <td>Lumber god. Nice spot for fletching.</td>
+            <td>TzHaar boss, got a kill there last week,</td>
+            <td>Yes, he's a guard in the city of Varrock.</td>
+            <td>Duradel is like a God of War for OSRS. He's pretty legendary.</td>
+            <td> Yep, he's a Slayer master. Works with fire, water, earth, and air.</td>
+        </tr>
+        <tr>
+            <td><span style="color: var(--secondary-color)">Where can I get magic logs...</span> (game knowledge)</td>
+            <td>Barrows shop has some.</td>
+            <td>Taverley market!</td>
+            <td>You can buy them from a store or get them from trees in the magical forest.</td>
+            <td>Magic logs? Try Lumbridge, D&D shop usually has them.</td>
+            <td>Varrock GE (Grand Exchange) or Dueling Arena. Best of luck!</td>
+        </tr>
+    </table>
+</div>
+<p>
+    All bad. I hate them all. If we follow the actions of any models here, we'll be broke, dead, and lonely. <br>
+    Of the model responses though, Mistral 
+    seems to be the only one that seems to have <i>some</i> knowledge of the game, it's language is just off, so that's pretty manageable. 
+    I was doing an individual analysis for the responses, but since we're going on vibes, I'll focus in on improving Mistral!
+</p>
+<i>Aside: Cursor also generated the above table, and auto-populated a lot of the fields, and honestly they're pretty good</i>
+<div class="figure-container three-columns">
+        <img src="https://i.imgur.com/Jm8GtXz.png" alt="Cursor table generation" style="width: auto; height: 125px;">
+        <img src="https://i.imgur.com/hDIRaym.png" alt="Cursor table generation" style="width: auto; height: 125px;">
+        <img src="https://i.imgur.com/NI0BavR.png" alt="Cursor table generation" style="width: auto; height: 125px;">
+</div>
+<p>
+    I think we could squeeze more performance out with better prompting, but I want to focus on how we can improve the models.<br>
+    We can either try knowledge enhancement with things like tools (search) and rag, or we can try to fine-tuning on in-game data to provide 
+    better context for how to interact in the game. With two areas to focus in on, I want to keep this post scoped in so will focus on fine-tuning.
+</p>
+<h3>Game Chat</h3>
+<p>Two methods in the Client class really stood out to me, 
+    <a href="https://github.com/runelite/runelite/blob/master/runelite-api/src/main/java/net/runelite/api/Client.java#L116" target="_blank">addChatMessage</a> and 
+    <a href="https://github.com/runelite/runelite/blob/master/runelite-api/src/main/java/net/runelite/api/Client.java#L948" target="_blank">getChatLineMap</a>. 
+</p>
+<p>So we can get the chat, I still haven't covered my data collection pattern yet, but I'm not gonna really focus on this still (<i>Eventually ™ </i>), but we use it here so take that as a hint if interested.</p>
+<p>High level though, I use a basic pub/sub model in python since there are characteristics of the game that means we don't need to worry 
+    about collecting data more often than every 0.6 second, and chat is a pretty slow updating process so for this data collection use-case, I'm not too worried about performance.<br>
+    Every 0.6 seconds we just check to see if there are any new chat line items and from that we write that to a file, from which we can do something like model fine-tuning!
+</p>
+<p>We made 2 publishers for chat, one that just collects everything and tries to categorize it, and one that filters down to just the chat messages.</p>
+<p>Below being the <a href="https://github.com/MarkProjectRepo/runelite-python/blob/main/src/runelite_python/runelite_data/message_pub.py#L6" target="_blank">MessagePublisher</a></p>
+<pre><code>for message in messages.iterator():
+    message = MessageNode(message)
+    name = self._clean_text(message.get_name())
+    value = self._clean_text(message.get_value())
+    sender = self._clean_text(message.get_sender())
+
+    msg_data = {
+        "name": name,
+        "value": value,
+        "sender": sender,
+        "type": self._message_type(sender, name)
+    }
+    if self.filter_func and self.filter_func(msg_data):
+        msg_data = self.filter_func(msg_data)
+    processed_messages.append(msg_data)
+</code></pre>
+<p>Then a convenience class that inherits all from MessagePublisher, but hardcodes in the filter function to only collect chat messages and turns the line items into cleaner chat strings.</p>
+<pre><code>class ChatPublisher(MessagePublisher):
+    def __init__(self, client: Client, publisher_name: str = None):
+        filter_func = lambda x: x['sender'] == None and x['name']
+        super().__init__(client, publisher_name, 1, filter_func)
+        self.chat_length = 0
+
+    def get_message(self):
+        messages = super().get_message()
+        res = messages[self.chat_length:]
+        self.chat_length = len(messages)
+
+        return '\n'.join([f"{m['name']}: {m['value']}" for m in res])
+</code></pre>
+<figure>
+    <img src="https://i.imgur.com/YrUOxgV.gif" alt="Changing the name in the chat">
+    <figcaption>Collecting chat data from a semi-active location</figcaption>
+</figure>
+<p>The code is a little more verbose with lame boilerplate (not crazy), so I put it in a <a href="https://gist.github.com/MarkProjectRepo/b6f553629adfe6b7cbecdd91c9be24cb" target="_blank">gist</a>,
+ but going over the important snippet
+</p>
+<pre><code>client = Client(jclient)
+messages = client.get_messages()
+try:
+    for message in messages.iterator():
+        message = MessageNode(message)
+        message.set_name(args.name)
+        message.set_value(args.msg)
+except Exception as e:
+    pass
+client.refresh_chat()
+</code></pre>
+<p>So, using the same client as in the prior post, we can easily get all the messages in the client, and from the below gif, we can change them!</p>
+<figure>
+    <img src="https://i.imgur.com/ZKJA6vo.gif" alt="Changing the name in the chat">
+    <figcaption>Changing the chat data</figcaption>
+</figure>
+<p>Sick. Some annoying things to note, the messages are just... null sometimes, I messed around a little bit with checks but not much seems to catch it for whatever reason, so though I'm not a fan of the try/catch, I can live with it for now.</p>
+<p>So, we can see all the chats, we can edit them, sending is a little bit more annoying, as we need the client thread.</p>
