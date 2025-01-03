@@ -1,12 +1,22 @@
+<div class="figure-container" style="display: flex; justify-content: center; align-items: center;">
+    <img src="assets/fishing_lvl.jpg" alt="Players in Draynor Village, one asks for fishing level and after saying theirs everyone responds nice" style="width: auto; height: 320px; object-fit: contain;">
+</div>
 <h3>Fish lvl?</h3>
-<img src="assets/fishing_lvl.jpg" alt="Players in Draynor Village, one asks for fishing level and after saying theirs everyone responds nice" style="width: auto; height: 320px; object-fit: contain;">
-<p>Well, I've said in other places I'm still interested in NLP inclusively of LLMs, so inevitably this had to come. Time to hook in Ollama to runescape.</p>
+<p>Since I've always had an interest (personal + professional) in NLP, a natural fit for a post here are some experiments in automating chat in runescape. Time to hook in LLMs.</p>
 <p>I know everyone's thinking it "Why can't MMOs stop being social?", well we can solve that. We can aim to experiment with how to best get llms to respond when someone addresses us, or maybe engage with them 🤔</p>
 
 <h3>Baseline Check</h3>
-<p>So first, I want to check if any of the models out of the box can do well in just chatting like a player or if they know anything about the game.</p>
-<p>Using Ollama and OpenWebUI, it's pretty easy to test out multiple models on a task, so let's setup a baseline prompt we'll test out</p>
-<pre><code>You're a player interacting in the world of runescape. 
+<p>So first, I want to check if any models out of the box can do well in just chatting like a player or if they know anything about the game.</p>
+<p>
+    Using <a href="https://ollama.com/" target="_blank">Ollama</a> and <a href="https://openwebui.com/" target="_blank">OpenWebUI</a>, it's pretty easy to test out multiple models on a task, so let's setup a baseline prompt we'll test out<br><br>
+    I'm running this all on my local desktop with a rtx 3090 (24gb vram), threadripper 1950X 16 core, and 64gb ram.
+</p>
+<figure>
+    <img src="https://i.imgur.com/X2qTDV1.png" alt="OpenWebUI interface with candidate models (llama3.1, 3.2, qwen2.5, mistral, llava)">
+    <figcaption>OpenWebUI interface with candidate models</figcaption>
+</figure>
+<pre><code><u>System prompt</u>
+You're a player interacting in the world of runescape. 
 You're trying to blend in with the crowd and go with what's being said to you, and will match the energy of whatever is being said. 
 Keep your responses extremely brief, use common acronyms, make sure you aren't suspicious (in this context, being suspicious means speaking verbosely).
     
@@ -79,31 +89,41 @@ And with that we'll ideally see how we perform out of the box. To experiment, I'
     </table>
 </div>
 <p>
-    All bad. I hate them all. If we follow the actions of any models here, we'll be broke, dead, and lonely. <br>
+    All bad, honestly. If we follow the actions of any models here, we'll be broke, dead, and lonely. <br>
     Of the model responses though, Mistral 
     seems to be the only one that seems to have <i>some</i> knowledge of the game, it's language is just off, so that's pretty manageable. 
-    I was doing an individual analysis for the responses, but since we're going on vibes, I'll focus in on improving Mistral!
+    I was originally going to break down the individual responses, but since we're going on vibes, I'll focus in on improving Mistral!
 </p>
-<i>Aside: Cursor also generated the above table, and auto-populated a lot of the fields, and honestly they're pretty good</i>
+<i>Aside: Cursor also generated the above table, and auto-populated a lot of the fields, and honestly they're pretty good (cohere 3.5 20241022)</i>
 <div class="figure-container three-columns">
-        <img src="https://i.imgur.com/Jm8GtXz.png" alt="Cursor table generation" style="width: auto; height: 125px;">
-        <img src="https://i.imgur.com/hDIRaym.png" alt="Cursor table generation" style="width: auto; height: 125px;">
-        <img src="https://i.imgur.com/NI0BavR.png" alt="Cursor table generation" style="width: auto; height: 125px;">
+        <img src="https://i.imgur.com/Jm8GtXz.png" alt="Cursor table generation 1" style="width: auto; height: 125px;">
+        <img src="https://i.imgur.com/hDIRaym.png" alt="Cursor table generation 2" style="width: auto; height: 125px;">
+        <img src="https://i.imgur.com/NI0BavR.png" alt="Cursor table generation 3" style="width: auto; height: 125px;">
 </div>
 <p>
     I think we could squeeze more performance out with better prompting, but I want to focus on how we can improve the models.<br>
     We can either try knowledge enhancement with things like tools (search) and rag, or we can try to fine-tuning on in-game data to provide 
     better context for how to interact in the game. With two areas to focus in on, I want to keep this post scoped in so will focus on fine-tuning.
 </p>
-<h3>Game Chat</h3>
-<p>Two methods in the Client class really stood out to me, 
-    <a href="https://github.com/runelite/runelite/blob/master/runelite-api/src/main/java/net/runelite/api/Client.java#L116" target="_blank">addChatMessage</a> and 
-    <a href="https://github.com/runelite/runelite/blob/master/runelite-api/src/main/java/net/runelite/api/Client.java#L948" target="_blank">getChatLineMap</a>. 
+<h3>Game Data</h3>
+<h4>Wiki</h4>
+<p>
+    Old school runescape it actually known for having one of the best wikis in modern MMOs, with so much detail and evolving information, 
+    it's one of those games where while you're playing you have about 100 tabs open with different articles. This is going to be extremely valuable
+    as it can be both a source of fine-tuning data, as well as a source of context for the models in future posts.<br><br>
+    One issue is, there is no api, and unlike mainstream wikipedia there isn't a publicly avaiable data dump. However, it at least does provide 
+    a convenient "all pages" page, which makes scraping pretty trivial!
 </p>
-<p>So we can get the chat, I still haven't covered my data collection pattern yet, but I'm not gonna really focus on this still (<i>Eventually ™ </i>), but we use it here so take that as a hint if interested.</p>
+<p>
+    Using cursor, I built out 
+</p>
+<h4>Game data: Chat</h4>
+<p>A method in the Client is key for this: <a href="https://github.com/runelite/runelite/blob/master/runelite-api/src/main/java/net/runelite/api/Client.java#L948" target="_blank">getChatLineMap</a>. 
+</p>
+<p>Since we have access either directly through the java methods, or through py4j, we can get the chat. I still haven't covered my data collection pattern yet, but I'm not gonna really focus on this still (<i>Eventually ™ </i>), but we use it here so take that as a hint if interested.</p>
 <p>High level though, I use a basic pub/sub model in python since there are characteristics of the game that means we don't need to worry 
-    about collecting data more often than every 0.6 second, and chat is a pretty slow updating process so for this data collection use-case, I'm not too worried about performance.<br>
-    Every 0.6 seconds we just check to see if there are any new chat line items and from that we write that to a file, from which we can do something like model fine-tuning!
+    about collecting data more often than every 0.6 second.<br>Chat is a pretty slow updating process so for this data collection use-case, I'm not too worried about performance.<br>
+    Every 0.6 seconds we just check to see if there are any new chat line items and from that we write that to a file, from which we can do some fine-tuning with (as long as we get enough chat data)
 </p>
 <p>We made 2 publishers for chat, one that just collects everything and tries to categorize it, and one that filters down to just the chat messages.</p>
 <p>Below being the <a href="https://github.com/MarkProjectRepo/runelite-python/blob/main/src/runelite_python/runelite_data/message_pub.py#L6" target="_blank">MessagePublisher</a></p>

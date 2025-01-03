@@ -73,9 +73,11 @@ nav {
 main {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 6rem 1rem 2rem 1rem;
+    padding: 6rem 2rem 2rem 2rem;
     flex: 1;
     width: 100%;
+    position: relative;
+    overflow-x: hidden;
 }
 
 .tab-content {
@@ -899,18 +901,33 @@ figcaption {
     }
 }
 
-/* Add these table styles after the blog-content styles */
+/* Table container styles */
+.blog-content .table-container {
+    position: relative;
+    width: 100vw;
+    margin-left: 50%;
+    transform: translateX(-50%);
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    padding: 0 2rem;
+    overflow-x: auto;
+}
 
+/* Table styles */
 .blog-content table {
-    width: 100%;
+    width: 75%;
+    min-width: 800px;
+    max-width: 1200px;
+    margin: 0 auto;
     border-collapse: collapse;
-    margin: 2rem 0;
     background: var(--card-bg);
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--glass-effect);
 }
 
+/* Cell styles */
 .blog-content th,
 .blog-content td {
     padding: 1rem;
@@ -929,40 +946,25 @@ figcaption {
     background: rgba(0, 0, 0, 0.2);
 }
 
-/* Make the first column (Text column) slightly wider */
+/* First column styles */
 .blog-content td:first-child {
-    width: 25%;
-    white-space: nowrap;
+    width: 250px;
+    min-width: 250px;
     background: rgba(0, 0, 0, 0.3);
 }
 
-/* Add hover effect on rows */
+/* Other columns */
+.blog-content td:not(:first-child) {
+    min-width: 175px;
+    padding: 1rem 1.5rem;
+}
+
+/* Row hover effect */
 .blog-content tr:hover td {
     background: rgba(0, 206, 201, 0.05);
 }
 
-/* For wider tables, allow horizontal scrolling */
-.blog-content .table-container {
-    max-width: calc(100vw - 4rem);
-    overflow-x: auto;
-    margin: 2rem calc(-50vw + 50%);
-    padding: 0 2rem;
-    position: relative;
-    left: 50%;
-    right: 50%;
-    width: 100vw;
-    /* display: flex; */
-    justify-content: center;
-}
-
-/* Update table styles */
-.blog-content table {
-    border: 1px solid var(--glass-effect);
-    width: calc(75% - 4rem);
-    min-width: 800px;
-    margin: 2rem 0;
-}
-
+/* Table corner radius */
 .blog-content tr:first-child th:first-child {
     border-top-left-radius: 8px;
 }
@@ -979,14 +981,18 @@ figcaption {
     border-bottom-right-radius: 8px;
 }
 
-/* Ensure text columns have enough space */
-.blog-content td:first-child {
-    width: 200px;
-    min-width: 200px;
+/* Scrollbar styles */
+.blog-content .table-container::-webkit-scrollbar {
+    height: 8px;
+    background: var(--background-color);
 }
 
-/* Add some padding for other columns */
-.blog-content td:not(:first-child) {
-    min-width: 150px;
-    padding: 1rem 1.5rem;
+.blog-content .table-container::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 4px;
+}
+
+.blog-content .table-container::-webkit-scrollbar-track {
+    background: var(--card-bg);
+    border-radius: 4px;
 }
