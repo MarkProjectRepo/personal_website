@@ -112,14 +112,25 @@ And with that we'll ideally see how we perform out of the box. To experiment, I'
     it's one of those games where while you're playing you have about 100 tabs open with different articles. This is going to be extremely valuable
     as it can be both a source of fine-tuning data, as well as a source of context for the models in future posts.<br><br>
     One issue is, there is no api, and unlike mainstream wikipedia there isn't a publicly avaiable data dump. However, it at least does provide 
-    a convenient "all pages" page, which makes scraping pretty trivial!
+    a convenient <a href="https://oldschool.runescape.wiki/w/Special:AllPages?from=A+nice+key&hideredirects=1" target="_blank">"all pages"</a> page, which makes scraping pretty trivial!
 </p>
 <p>
-    Using cursor, I built out 
+    Using cursor, I built out <a href="https://github.com/MarkProjectRepo/osrs_wiki_crawl" target="_blank">this osrs wiki crawler</a>
+    which crawls + parses into markdown. One of the bigger challenges is some of the pages have some dynamic elements, they have remainders 
+    from prompts for people to suggest edits etc., so a lot of garbage is there and out-of-the-box packages just don't get us what we need (looking at you, <a href="https://pypi.org/project/html2text/" target="_blank">html2text</a>)
 </p>
+<p>
+    So, this flow is actually a good use-case for cursor's Agentic flow, where it's able to pull files/context when it needs, rather than 
+    me just having to statically provide something like a reference page, I can instead point it to the wiki, and say "go nuts" (just kidding, I prompted as follows):
+</p>
+<pre><code>@Web @https://oldschool.runescape.wiki/w/Special:AllPages?from=&to=&namespace=0&hideredirects=1  
+Given this wiki page which is a directory to articles for the game old school runescape, sample pages and come up with a way to parse 
+the html of the pages in a way that extracts the descriptions, and characteristics of what they describe (e.g. item stats, facts, ...), 
+and convert them to markdown (this is the hard part, but I believe in you). Please do so in python, and 
+use any libraries that make sense (like beautifulsoup), but don't just assume one page is the same as the next
+</code></pre>
 <h4>Game data: Chat</h4>
 <p>A method in the Client is key for this: <a href="https://github.com/runelite/runelite/blob/master/runelite-api/src/main/java/net/runelite/api/Client.java#L948" target="_blank">getChatLineMap</a>. 
-</p>
 <p>Since we have access either directly through the java methods, or through py4j, we can get the chat. I still haven't covered my data collection pattern yet, but I'm not gonna really focus on this still (<i>Eventually ™ </i>), but we use it here so take that as a hint if interested.</p>
 <p>High level though, I use a basic pub/sub model in python since there are characteristics of the game that means we don't need to worry 
     about collecting data more often than every 0.6 second.<br>Chat is a pretty slow updating process so for this data collection use-case, I'm not too worried about performance.<br>

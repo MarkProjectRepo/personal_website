@@ -344,22 +344,81 @@ h2 {
 }
 
 .blog-content pre {
+    position: relative;
     background: #1a1a1a;
     padding: 1.5rem;
     border-radius: 8px;
-    overflow-x: auto;
+    overflow: auto;
     margin: 1.5rem 0;
     border: 1px solid var(--glass-effect);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    resize: both;
+    min-height: 100px;
+    min-width: 200px;
+    max-height: 800px;
+    max-width: 100%;
 }
 
-.blog-content pre code {
-    background: none;
-    padding: 0;
-    font-family: 'Fira Code', monospace;
-    font-size: 0.95em;
-    line-height: 1.6;
-    color: #e0e0e0;
+.blog-content pre::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, 
+        transparent 0%,
+        transparent 50%,
+        var(--secondary-color) 50%,
+        var(--secondary-color) 100%
+    );
+    cursor: se-resize;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.blog-content pre:hover::after {
+    opacity: 1;
+}
+
+.blog-content pre[class*="language-"] {
+    margin: 1.5rem 0;
+    background: #1a1a1a;
+}
+
+.blog-content :not(pre) > code[class*="language-"],
+.blog-content pre[class*="language-"] {
+    background: #1a1a1a;
+}
+
+.blog-content .token.comment,
+.blog-content .token.prolog,
+.blog-content .token.doctype,
+.blog-content .token.cdata {
+    color: #666;
+}
+
+.blog-content .token.punctuation {
+    color: #999;
+}
+
+.blog-content .token.property,
+.blog-content .token.tag,
+.blog-content .token.boolean,
+.blog-content .token.number,
+.blog-content .token.constant,
+.blog-content .token.symbol,
+.blog-content .token.deleted {
+    color: var(--accent-color);
+}
+
+.blog-content .token.selector,
+.blog-content .token.attr-name,
+.blog-content .token.string,
+.blog-content .token.char,
+.blog-content .token.builtin,
+.blog-content .token.inserted {
+    color: var(--secondary-color);
 }
 
 .blog-content ul, .blog-content ol {
@@ -995,4 +1054,73 @@ figcaption {
 .blog-content .table-container::-webkit-scrollbar-track {
     background: var(--card-bg);
     border-radius: 4px;
+}
+
+/* Add styles for the file path display */
+.code-block-header {
+    background: #141414;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--glass-effect);
+    color: var(--secondary-color);
+    font-family: 'Fira Code', monospace;
+    font-size: 0.9em;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+/* Wrapper for code blocks with headers */
+.code-block-wrapper {
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    border: 1px solid var(--glass-effect);
+    background: #1a1a1a;
+}
+
+.code-block-wrapper pre {
+    margin: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border: none;
+}
+
+/* Add copy button styles */
+.copy-code-button {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.3rem 0.8rem;
+    background: var(--secondary-color);
+    border: none;
+    border-radius: 4px;
+    color: var(--background-color);
+    font-size: 0.8rem;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.code-block-wrapper {
+    position: relative;
+}
+
+.code-block-wrapper:hover .copy-code-button {
+    opacity: 1;
+}
+
+/* Update code block wrapper styles */
+.code-block-wrapper pre {
+    margin: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border: none;
+    padding-top: 2.5rem; /* Make room for copy button */
+}
+
+/* Line numbers styles */
+.line-numbers .line-numbers-rows {
+    border-right-color: var(--glass-effect);
+}
+
+.line-numbers-rows > span:before {
+    color: #666;
 }
