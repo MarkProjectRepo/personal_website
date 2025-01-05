@@ -9,6 +9,14 @@ const blogPosts = [
         previewLength: 150
     },
     {
+        title: "OSRS Wiki Scraping",
+        date: "2025-01-05",
+        file: "osrs-wiki-scraping.html",
+        format: 'html',
+        slug: 'osrs-wiki-scraping',
+        previewLength: 150
+    },
+    {
         title: "Encapsulating Java classes in Python (Runelite series pt.2)",
         date: "2024-12-12",
         file: "runelite-post2.html",

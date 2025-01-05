@@ -1,0 +1,148 @@
+<article class="blog">
+
+<h1>OSRS Wiki   ing for LLM Training</h1>
+
+<p>
+Part of this RuneScape series I'm going to start focusing on the chat potential.
+The issue is, there's not a lot of concentration of the game data (read as game knowledge) in LLMs, especially the smaller models available in Ollama.
+To that end, I want to make a short post on my efforts around collecting data, which I can take advantage of for many future projects!
+</p>
+
+<h3>OSRS Wiki Overview</h3>
+<p>
+The wiki for this game is beloved for how complete and descriptive it is. For almost any given activity, there's an article describing
+how to both complete it, and also efficiently complete it (for money making or experience per hour). There's detailed information on every
+item, its value, its history, etc., and it just goes on and on. While LLMs don't have zero knowledge, I want to collect what I can
+about the game to support things like fine-tuning or graph creation and see what we get.
+</p>
+
+<p>
+Unfortunately, unlike the Wikipedia we all know and love, there's no public dump of the entire website anywhere, and the API is a little cumbersome. 
+Instead, I want to just find a quick and dirty way to discover the pages that exist and download them.
+</p>
+
+<h3>Initial Approach & Requirements</h3>
+<p>
+Originally I was using this convenient page at <a href="https://oldschool.runescape.wiki/w/Special:AllPages?hideredirects=1">Special:AllPages</a> 
+which is a directory for all given pages in the wiki, but a quick peek at their 
+<a href="https://oldschool.runescape.wiki/robots.txt">robots.txt</a> reveals I risk an IP ban for crawling Special pages (Obey!). 
+Luckily, they provide a sitemap dump, so we'll work with Cursor and get a quick scraper done, but with some basic requirements:
+</p>
+
+<ol>
+    <li>We want every page relevant to the game itself</li>
+    <li>We should convert it to a smaller LLM friendly format along the way (markdown)</li>
+    <li>We want to use multi-processing/threading whenever possible but be resilient to rate limiting</li>
+</ol>
+
+<p>
+Our scraping flow will go:<br>
+Download sitemap → Retrieve scrape-able pages → Download not yet seen pages → Convert to markdown → Save both (HTML & MD) to our local storage
+</p>
+
+<h3>Sitemap Processing</h3>
+<p>
+The main goal here will be to outline how I worked with Cursor, and walk through the resulting code. Let's start with the sitemap scraping.
+Sitemap download and extraction are relatively straightforward, and all the links are readily available. We just need to make sure 
+we resolve to the latest dump, validate whether we already have it or not, then download and extract.
+</p>
+
+<pre><code class="language-python">response = requests.get(self.sitemap_index_url, headers=self.headers)
+index_content = response.content
+
+# Parse the index XML
+root = ET.fromstring(index_content)
+
+urls = set()
+for url in root.findall('.//sm:url/sm:loc', ns):
+    page_url = url.text
+    # Only include wiki pages, exclude special pages, etc.
+    if '/w/' in page_url and not any(x in page_url.lower() for x in [
+        'special:', 'file:', 'template:', 'category:', 'talk:', 'user:'
+    ]):
+        urls.add(page_url)</code></pre>
+
+<h3>Crawling Implementation</h3>
+<p>
+With all URLs from the sitemap XML, we need to implement the retrieval process. The flow goes:
+</p>
+
+<ol>
+    <li>Filter already crawled pages</li>
+    <li>Batch URLs according to num cores</li>
+    <li>Spawn crawling processes</li>
+</ol>
+
+<p>
+For the crawling processes themselves:
+</p>
+<ul>
+    <li>Download (with retries)</li>
+    <li>Convert to markdown</li>
+    <li>Save HTML & MD files</li>
+</ul>
+<h3>Scrapping & Multi-Processing</h3>
+Scrapers are... common, and full of clean data to re-implement for the LLMs, so this part goes extremely well, the ask being
+to create multiprocess download flows that maximize the threads in each process to get us the website as fast as we can.<br>
+Each process is responsible for a batch of the given urls (~28k total, so pretty easy), and each process spawns a thread from
+a fixed pool to download, convert, and save.
+<br><br>
+<h4>Chat vs Agents</h4>
+The fun part here is the difference in using a raw LLM chat vs agentic flows as there's a good example for what might need
+one vs. the other. Prior, we had a relatively static sitemap, where release to release there will be no schema change, and with 
+just one line item example of how to extract the url we need, it generalizes. But, when we have the actual html we're extracting
+we hit an issue with this. We can try to pick specific example docs, ask it to make us a markdown converter for it, then
+test it on new pages and see, trial and error. In this case, using agents with terminal tools (curl or cat, depending on if going
+from the web vs already downloaded pages), the trial and error doesn't have to be done by us. Instead essentially just in a while
+loop where you ask "Create a html to markdown converter for the key content under the div id mw-content-text, sample documents from the
+wiki_data directory directly and verify against multiple samples whether the conversion was valid markdown and if it's well organized". 
+In the end, there is no perfect solution, and "well organized" isn't really a well defined target, but with a limit on the number of 
+executions and trials, we can skip our own iterative feed and instead allow it to refine any number of times until it's "reasonably" organized. In the end that's how we got https://github.com/MarkProjectRepo/osrs_wiki_crawl/blob/main/wiki_parser.py!
+<h3>HTML to Markdown Conversion</h3>
+<p>
+Let's test our conversion with a sample page. Here's how we can use the parser:
+</p>
+
+<pre><code class="language-python">from wiki_parser import parse_wiki_page
+
+def read_html_file(file_path):
+    with open(file_path, 'r', encoding='utf-8') as f:
+        return f.read()
+
+def main():
+    # Read the Abyssal whip page
+    html_content = read_html_file('wiki_pages/Abyssal_whip.html')
+    
+    # Parse and convert to markdown
+    markdown = parse_wiki_page(html_content)
+    
+    # Save the markdown output
+    with open('wiki_pages/Abyssal_whip.md', 'w', encoding='utf-8') as f:
+        f.write(markdown)
+    
+    print("Conversion complete! Check Abyssal_whip.md for the result.")</code></pre>
+
+<p>
+Converting <a href="https://oldschool.runescape.wiki/w/Amulet_of_power">the Amulet of power page</a> to markdown gives us 
+<a href="https://gist.github.com/MarkProjectRepo/c8fd12570dd9f9e7f83177536e64ec41">this result</a>. From a glance, that's really solid - 
+we can see the key item information (value etc), the plain text descriptions, stats, other uses... Awesome.
+</p>
+
+<h3>Next Steps</h3>
+<p>
+What's amazing here is we can work towards tailor-made utilities with no lib dependencies like html2text, where we might have to
+massage to work the data into their expected formats. All this just with the amazing Cursor utilities (maybe I'll try out 
+<a href="https://github.com/All-Hands-AI/OpenHands">OpenHands</a> in the near future to trial local models on this context).
+</p>
+
+<p>
+Reach out if you're particularly interested in any of the following:
+</p>
+<ul>
+    <li>Wiki + chat model fine-tuning</li>
+    <li>Wiki RAG + search enhancement</li>
+    <li>Wiki knowledge graph creation + model training</li>
+    <li>Automating chat in RuneScape</li>
+</ul>
+
+</article>
