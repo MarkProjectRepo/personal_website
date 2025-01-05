@@ -1,15 +1,15 @@
 // Blog post metadata
 const blogPosts = [
+    // {
+    //     title: "Ollama OSRS",
+    //     date: "2024-12-18",
+    //     file: "ollama-osrs.html",
+    //     format: 'html',
+    //     slug: 'ollama-osrs',
+    //     previewLength: 150
+    // },
     {
-        title: "Ollama OSRS",
-        date: "2024-12-18",
-        file: "ollama-osrs.html",
-        format: 'html',
-        slug: 'ollama-osrs',
-        previewLength: 150
-    },
-    {
-        title: "OSRS Wiki Scraping",
+        title: "Data Collection with LLMs",
         date: "2025-01-05",
         file: "osrs-wiki-scraping.html",
         format: 'html',

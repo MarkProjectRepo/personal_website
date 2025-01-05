@@ -1,7 +1,5 @@
 <article class="blog">
-
-<h1>OSRS Wiki   ing for LLM Training</h1>
-
+<a href="https://github.com/MarkProjectRepo/osrs_wiki_crawl/tree/main" target="_blank">Github Repo</a><br><br>
 <p>
 Part of this RuneScape series I'm going to start focusing on the chat potential.
 The issue is, there's not a lot of concentration of the game data (read as game knowledge) in LLMs, especially the smaller models available in Ollama.
@@ -11,13 +9,13 @@ To that end, I want to make a short post on my efforts around collecting data, w
 <h3>OSRS Wiki Overview</h3>
 <p>
 The wiki for this game is beloved for how complete and descriptive it is. For almost any given activity, there's an article describing
-how to both complete it, and also efficiently complete it (for money making or experience per hour). There's detailed information on every
+how to complete it, efficiently gain experience, or money. There's detailed information on every
 item, its value, its history, etc., and it just goes on and on. While LLMs don't have zero knowledge, I want to collect what I can
 about the game to support things like fine-tuning or graph creation and see what we get.
 </p>
 
 <p>
-Unfortunately, unlike the Wikipedia we all know and love, there's no public dump of the entire website anywhere, and the API is a little cumbersome. 
+Unfortunately, unlike the Wikipedia we all know and love, there's no public dump of the entire website anywhere, and the API some proprietary tooling. 
 Instead, I want to just find a quick and dirty way to discover the pages that exist and download them.
 </p>
 
@@ -42,9 +40,14 @@ Download sitemap → Retrieve scrape-able pages → Download not yet seen pages 
 
 <h3>Sitemap Processing</h3>
 <p>
-The main goal here will be to outline how I worked with Cursor, and walk through the resulting code. Let's start with the sitemap scraping.
-Sitemap download and extraction are relatively straightforward, and all the links are readily available. We just need to make sure 
-we resolve to the latest dump, validate whether we already have it or not, then download and extract.
+The main goal here will be to outline how I worked with Cursor, and walk through the interesting snippets of code (both for me and for the post).<br>
+Let's start with the sitemap scraping.<br><br>
+Sitemap download + extract are relatively straight forward, and all the links are just readily available, so we just need to make sure 
+we resolve to the latest dump, validate whether we already have it or not, then download + extract.
+
+Conveniently, in the generations it actually firstly makes sure to generate believable browser headers 
+<code>(`'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'`)</code>, convenient, 
+and proceeds to just retrieve the sitemaps + load into the python XML ElementTree.
 </p>
 
 <pre><code class="language-python">response = requests.get(self.sitemap_index_url, headers=self.headers)
@@ -52,19 +55,24 @@ index_content = response.content
 
 # Parse the index XML
 root = ET.fromstring(index_content)
+</code></pre>
 
-urls = set()
+Then, we (it) just list out the ".//sm:loc" tags and gets the first one (correct, since list is date sorted). This leads to just some boilerplate retrieval + extraction.
+<pre><code class="language-python">urls = set()
 for url in root.findall('.//sm:url/sm:loc', ns):
     page_url = url.text
     # Only include wiki pages, exclude special pages, etc.
     if '/w/' in page_url and not any(x in page_url.lower() for x in [
         'special:', 'file:', 'template:', 'category:', 'talk:', 'user:'
     ]):
-        urls.add(page_url)</code></pre>
+        urls.add(page_url)
+</code></pre>
+I do like the way it verifies if we already have the file (<a href="https://github.com/MarkProjectRepo/osrs_wiki_crawl/blob/main/main.py#L88" target="_blank">code</a>)
+<br><code>hashlib.md5(existing_content).hexdigest() != hashlib.md5(sitemap_content).hexdigest()</code><br>comparing the hashes, though downloading then verifying is a little iffy, nothing I care enough to change.
 
 <h3>Crawling Implementation</h3>
 <p>
-With all URLs from the sitemap XML, we need to implement the retrieval process. The flow goes:
+So, we have all the urls from the page in the xml, we need to retrieve! The flow now goes:
 </p>
 
 <ol>
@@ -85,22 +93,29 @@ For the crawling processes themselves:
 Scrapers are... common, and full of clean data to re-implement for the LLMs, so this part goes extremely well, the ask being
 to create multiprocess download flows that maximize the threads in each process to get us the website as fast as we can.<br>
 Each process is responsible for a batch of the given urls (~28k total, so pretty easy), and each process spawns a thread from
-a fixed pool to download, convert, and save.
+a fixed pool to download, convert, and save. Not much too interesting to dive in, so I'll save my breath.
 <br><br>
 <h4>Chat vs Agents</h4>
-The fun part here is the difference in using a raw LLM chat vs agentic flows as there's a good example for what might need
-one vs. the other. Prior, we had a relatively static sitemap, where release to release there will be no schema change, and with 
+The fun part here is the difference in using a raw LLM chat vs agentic flows as there's a good example here for what might need
+one vs. the other. <br>
+Prior, we had a relatively static sitemap, where release to release there will be no schema change, and with 
 just one line item example of how to extract the url we need, it generalizes. But, when we have the actual html we're extracting
 we hit an issue with this. We can try to pick specific example docs, ask it to make us a markdown converter for it, then
-test it on new pages and see, trial and error. In this case, using agents with terminal tools (curl or cat, depending on if going
+test it on new pages and see, trial and error. <br>
+In this case, using agents with terminal tools (curl or cat, depending on if going
 from the web vs already downloaded pages), the trial and error doesn't have to be done by us. Instead essentially just in a while
-loop where you ask "Create a html to markdown converter for the key content under the div id mw-content-text, sample documents from the
-wiki_data directory directly and verify against multiple samples whether the conversion was valid markdown and if it's well organized". 
+loop where you ask "Create a html to markdown converter for the key content under the div id `mw-content-text`, sample documents from the
+wiki_data directory directly and verify against multiple samples whether the conversion was valid markdown and if it's well organized".<br>
 In the end, there is no perfect solution, and "well organized" isn't really a well defined target, but with a limit on the number of 
-executions and trials, we can skip our own iterative feed and instead allow it to refine any number of times until it's "reasonably" organized. In the end that's how we got https://github.com/MarkProjectRepo/osrs_wiki_crawl/blob/main/wiki_parser.py!
+executions and trials, we can skip our own iterative feed and instead allow it to refine any number of times until it's "reasonably" organized. 
+This all culminates in <a href="https://github.com/MarkProjectRepo/osrs_wiki_crawl/blob/main/wiki_parser.py" target="_blank">this wiki parser</a>!
+
 <h3>HTML to Markdown Conversion</h3>
 <p>
-Let's test our conversion with a sample page. Here's how we can use the parser:
+Things like headers and lists are easy, but semi-dynamic elements like tables with toggles to change them often break, so libraries
+like <a href="https://pypi.org/project/html2text/" target="_blank">html2text</a> kind of suck for this sadly.
+
+So, let's run what we got from the agent! (didn't even need to make a test script, the agent made it to test itself :wow:)
 </p>
 
 <pre><code class="language-python">from wiki_parser import parse_wiki_page
@@ -111,32 +126,33 @@ def read_html_file(file_path):
 
 def main():
     # Read the Abyssal whip page
-    html_content = read_html_file('wiki_pages/Abyssal_whip.html')
+    html_content = read_html_file('wiki_pages/html/Amulet_of_power.html')
     
     # Parse and convert to markdown
     markdown = parse_wiki_page(html_content)
     
     # Save the markdown output
-    with open('wiki_pages/Abyssal_whip.md', 'w', encoding='utf-8') as f:
+    with open('wiki_pages/markdown/Amulet_of_power.md', 'w', encoding='utf-8') as f:
         f.write(markdown)
     
-    print("Conversion complete! Check Abyssal_whip.md for the result.")</code></pre>
+    print("Conversion complete! Check Amulet_of_power.md for the result.")</code></pre>
 
 <p>
-Converting <a href="https://oldschool.runescape.wiki/w/Amulet_of_power">the Amulet of power page</a> to markdown gives us 
-<a href="https://gist.github.com/MarkProjectRepo/c8fd12570dd9f9e7f83177536e64ec41">this result</a>. From a glance, that's really solid - 
-we can see the key item information (value etc), the plain text descriptions, stats, other uses... Awesome.
+Converting <a href="https://oldschool.runescape.wiki/w/Amulet_of_power" target="_blank">the Amulet of power page</a> to markdown gives us 
+<a href="https://gist.github.com/MarkProjectRepo/c8fd12570dd9f9e7f83177536e64ec41" target="_blank">this result</a>. From a glance, that's really solid - 
+we can see the key item information (value etc), the plain text descriptions, stats, other uses... Awesome. Just some weird hanging headers, 
+and at time missing column names, but it's enough to get what we need (imo).
 </p>
 
 <h3>Next Steps</h3>
 <p>
 What's amazing here is we can work towards tailor-made utilities with no lib dependencies like html2text, where we might have to
 massage to work the data into their expected formats. All this just with the amazing Cursor utilities (maybe I'll try out 
-<a href="https://github.com/All-Hands-AI/OpenHands">OpenHands</a> in the near future to trial local models on this context).
+<a href="https://github.com/All-Hands-AI/OpenHands" target="_blank">OpenHands</a> in the near future to trial local models on this context).
 </p>
 
 <p>
-Reach out if you're particularly interested in any of the following:
+Reach out if you're particularly interested in any of the following, I'll get to them all (hopefully), but if there's any interest I'll prioritize:
 </p>
 <ul>
     <li>Wiki + chat model fine-tuning</li>
