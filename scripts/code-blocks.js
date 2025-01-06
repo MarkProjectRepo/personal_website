@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensure Prism is available
+    if (typeof Prism === 'undefined') {
+        console.error('Prism is not loaded');
+        return;
+    }
+
     // Process all pre > code blocks
     document.querySelectorAll('pre > code').forEach(codeBlock => {
         const pre = codeBlock.parentElement;
@@ -47,8 +53,6 @@ document.addEventListener('DOMContentLoaded', function() {
         wrapper.appendChild(copyButton);
     });
 
-    // Re-run Prism highlighting after a short delay to ensure all elements are processed
-    setTimeout(() => {
-        Prism.highlightAll();
-    }, 100);
+    // Highlight all code blocks
+    Prism.highlightAll();
 }); 

@@ -1,0 +1,151 @@
+<article class="blog" itemscope itemtype="http://schema.org/BlogPosting">
+    <meta name="description" content="Learn how to efficiently and cost-effectively generate a dataset for LLM training using Deepseek's V3 model.">
+    <meta name="keywords" content="Deepseek, V3, LLM training data, Q&A generation, Python, RuneScape, LLM training data, sitemap processing, multi-threading, HTML to Markdown">
+    <meta property="og:title" content="Scraping the OSRS Wiki: Building a RuneScape Knowledge Dataset">
+    <meta property="og:description" content="Learn how to scrape the OSRS Wiki using Python and create a dataset for LLM training. Step-by-step guide with code examples.">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <h3 itemprop="headline">Generating a RuneScape Q&A Dataset</h3>
+    
+    <div itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Mark Traquair">
+    </div>
+    
+    <a href="https://github.com/MarkProjectRepo/osrs_wiki_crawl/tree/main" target="_blank" rel="noopener">Github Repo</a><br><br>
+    
+    <section itemprop="articleBody">
+<p>
+Before, I downloaded an entire wiki and turned it into a LLM legible format, markdown, to use for other language models.
+Now, my end goal is mostly integrating an assistant into runescape, where I can ask questions or let it take over chat. Ultimately, 
+I don't really want to pay for this, mainly because I'm cheap. LLMs, like GPT-4*, Claude and the like all seem to have <i>some</i> knowledge
+of the game, but to use an API hitting a server with the order of 100s of thousands of GPUs to say "thx" to someone who compliments
+me in game feels... wasteful, like using a sledgehammer to crack a nut.
+</p>
+<p>
+To that end, I want to fine tune a much smaller model that can run locally with in-depth game knowledge and lingo. For this,
+we already have the above dataset, but how can we enhance this to better attack the Q&A use-case?
+</p>
+
+<h3>Deepseek</h3>
+<p>
+A much smaller incumbent to the likes of OpenAI, the team at deepseek announced their latest model, trained on only 2048 GPUs 
+<a href="https://huggingface.co/deepseek-ai/DeepSeek-V3" target="_blank" rel="noopener">DeepSeek-V3 release</a>. 
+Some creativity was used, and pretty clearly they kind of did what I'm about to do (trained on another model's outputs <a href="https://news.ycombinator.com/item?id=42561419" target="_blank" rel="noopener">https://news.ycombinator.com/item?id=42561419</a>), but in the end they provide an exceptional model
+trained on negligible (compared to the larger labs) resources, and for a limited time are providing it at an *absurdly* cheap rate ($0.28/output token).
+</p>
+
+<p>
+I want to quickly cover how we can make use of this and build out a large dataset covering the facets of this game!
+</p>
+
+<sub>
+Caveat to the hype: While the use is cheap, always consider <b>why</b> it's cheap and what you risk. Do you have sensitive customer data?
+Can you get a guarantee that they won't take advantage?
+</sub>
+
+<h2>Q&A</h2>
+<p>
+So, we have our markdown formatted documents that we want to take in and turn into questions. Very similar to the crawling post, I'm going
+to use Cursor and lean on it for the heavy lifting of setting up more efficient API calls and start thinking about how to 
+generate context, and what I want to ask of the chat itself.
+</p>
+<p>
+All files aren't made equal, some are extremely information dense while others might exist to just document small, one-off facts.
+The first thought that might come to your mind is to outsource the thinking on this to the models and let them come up with 
+how many questions we should ask per document, e.g. "Looking at this markdown file, consider how information rich the data within it is and come up with a number of questions we could ask
+to understand it's content", though not a full prompt (the original contained more threats and constraints to get it to be parseable), 
+this is what I would basically call a "naive" approach, as we trade-off complexity for cost (time & money). <br>
+Additionally, it's better practice to try and constrain the model's outputs to a discrete ask, 
+rather than asking "Generate as many questions as you can" for a given file to constrain outputs and data scale.
+</p>
+<p>
+While there are tricks like caching (so subsequent calls on the same file would be ~10x cheaper), the reality 
+is this will be absurdly inefficient for several reasons (including the prior "morals" component I mentioned in the intro). 
+It's better to think of a simpler way to boil down the information density of the markdowns in line with a simple metric, in this case
+a suitable choice can easily be the # of characters. A wiki only exists to explain content that needs explaining, so if we translate
+that to a simple metric like doc length, we can then just create essentially a switch statement to "best guess" how many Qs we should ask.
+</p>
+<p>
+<pre><code># Scale based on actual document distribution:
+# - < 50 words (10th percentile): 1 question
+# - 50-160 words (10th-50th): 2 questions
+# - 160-325 words (50th-75th): 3 questions
+# - > 325 words (75th+): 4 questions
+if words < 50:
+    base_questions = 1
+elif words < 160:
+    base_questions = 2
+elif words < 325:
+    base_questions = 3
+else:
+    base_questions = 4
+</code></pre>
+</p>
+<p>
+So, now we only need to prompt deepseek to give us some # of questions based on a heuristic! I don't mind too much, as this Q&A set
+will also act as a <i>supplement</i> to the original markdown set as well, we just want to make sure some runescape based questions are 
+part of our training set to warm up the models weights.
+</p>
+
+<p>
+Now, there's very little throttling or issues with Deepseek v3, and according to <a href="https://api-docs.deepseek.com/guides/json_mode" target="_blank" rel="noopener">their docs</a> we should just use openai's python lib
+</p>
+<pre><code>class DeepSeek:
+    def __init__(self):
+        self.client = OpenAI(
+            api_key=os.environ.get("DEEPSEEK_API"),
+            base_url="https://api.deepseek.com",
+        )
+</code></pre>
+
+And we just use the following prompt <a href="https://github.com/MarkProjectRepo/osrs_wiki_crawl/blob/main/deepseek.py#L13" target="_blank" rel="noopener">deepseek.py#L13</a> that takes in our
+desired # of questions and... that's about it. The rest of the API calling is a little repetitive to my last post on crawling, so I don't want to spend too much time diving in, but you can find it <a href="https://github.com/MarkProjectRepo/osrs_wiki_crawl/blob/main/qa_generator_deepseek.py" target="_blank" rel="noopener">here</a>
+</p>
+
+<h2>The Dataset</h2>
+<p>
+In the end, we have just shy of 29k files (28559 to be exact). For these, we'll generate between 1-4 questions, conditioned on the length.
+So, let's dive in to the statistics of the processing time and sample some questions! On average, it took 3.4 seconds per file,
+in total we generated 63.4k questions, so an average of ~2 questions per file, and this all took just over an hour (68 minutes). Neat.
+<figure class="code-figure">
+    <img src="https://i.imgur.com/JDkZkzJ.png" alt="Datasets generation statistics, 4087s to complete, 63.4k questions generated" style="width: 50%; height: auto;display: block; margin-left: auto; margin-right: auto;">
+    <figcaption>Screenshot of the dataset generation statistics</figcaption>
+</figure>
+</p>
+<p>
+The question quality varies, but overall is exceptional, let's validate some samples!
+</p>
+<p>
+<b>Question:</b> What is the Agility level required to use the strange floor shortcut in the Forthos Dungeon?<br>
+<b>Answer:</b> An Agility level of 63 is required to use the shortcut.<br>
+<b>According to:</b> <a href="https://oldschool.runescape.wiki/w/Forthos_Dungeon#Scorched_Grotto" target="_blank" rel="noopener">Forthos_Dungeon#Scorched_Grotto</a>, correct!
+<br><br>
+<b>Question:</b> Who is the owner of the Helmet Shop in Barbarian Village?<br>
+<b>Answer:</b> The shop is run by Peksa.<br>
+<b>According to:</b> <a href="https://oldschool.runescape.wiki/w/Helmet_Shop." target="_blank" rel="noopener">Helmet_Shop.</a>, correct again!
+<br><br>
+<b>Question:</b> What is the restock time for Iron ore at Hendor's Awesome Ores?<br>
+<b>Answer:</b> 50m (5,000t)<br>
+<b>According to:</b> <a href="https://oldschool.runescape.wiki/w/Hendor%27s_Awesome_Ores" target="_blank" rel="noopener">Hendor's Awesome Ores</a>, correct again.
+
+</p>
+So, we have what appears to be a successful extraction! How much did this all cost me? An absurdly low $3.72USD, which
+includes all my experimentation as well.
+<figure class="code-figure">
+    <img src="https://i.imgur.com/PcnRE03.png" alt="Deepseek API cost, $3.72USD" style="width: 50%; height: auto;display: block; margin-left: auto; margin-right: auto;">   
+    <figcaption>Screenshot of the Deepseek API cost</figcaption>
+</figure>
+</p>
+<p>
+Here's <a href="https://1drv.ms/x/c/b2bf02bf259be19d/EbH5c33oBj1ImgBzHTEBQksBKncspv_z2775gFk4QaYnNw" target="_blank" rel="noopener">a link</a> 
+to this dataset for people to play around with, and I will likely release the markdown files as well.
+</p>
+
+<h2>Conclusion</h2>
+<p>
+For a limited time, Deepseek is offering an absurdly cost competitive choice against the incumbents of OpenAI and Anthropic.
+Until Feb. 8th, one month from the time of this post, it will be available at this price before going up by 10x. To take advantage of this, I took it upon myself to generate a Q&A dataset that I can also use for more data to finetune against!
+
+Want to take advantage while the getting's good, but don't know where to start? Reach out! I'm looking to work with people with
+_any_ interest in ML to make some ideas into a reality!

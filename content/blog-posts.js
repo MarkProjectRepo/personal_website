@@ -9,6 +9,14 @@ const blogPosts = [
     //     previewLength: 150
     // },
     {
+        title: "Q&A Dataset Generation",
+        date: "2025-01-08",
+        file: "qa-generation.html",
+        format: 'html',
+        slug: 'qa-generation',
+        previewLength: 150
+    },
+    {
         title: "Data Collection with LLMs",
         date: "2025-01-05",
         file: "osrs-wiki-scraping.html",
