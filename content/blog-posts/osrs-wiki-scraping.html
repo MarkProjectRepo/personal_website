@@ -1,12 +1,27 @@
-<article class="blog">
-<a href="https://github.com/MarkProjectRepo/osrs_wiki_crawl/tree/main" target="_blank">Github Repo</a><br><br>
+<article class="blog" itemscope itemtype="http://schema.org/BlogPosting">
+<meta name="description" content="Learn how to scrape the OSRS Wiki using Python and create a dataset for LLM training. Includes code examples for sitemap processing, multi-threaded crawling, and HTML to Markdown conversion.">
+<meta name="keywords" content="OSRS Wiki, web scraping, Python, RuneScape, LLM training data, sitemap processing, multi-threading, HTML to Markdown">
+<meta property="og:title" content="Scraping the OSRS Wiki: Building a RuneScape Knowledge Dataset">
+<meta property="og:description" content="Learn how to scrape the OSRS Wiki using Python and create a dataset for LLM training. Step-by-step guide with code examples.">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+
+<h1 itemprop="headline">Scraping the OSRS Wiki: Building a RuneScape Knowledge Dataset</h1>
+
+<div itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <meta itemprop="name" content="Mark Traquair">
+</div>
+
+<a href="https://github.com/MarkProjectRepo/osrs_wiki_crawl/tree/main" target="_blank" rel="noopener">Github Repo</a><br><br>
+
+<section itemprop="articleBody">
 <p>
 Part of this RuneScape series I'm going to start focusing on the chat potential.
 The issue is, there's not a lot of concentration of the game data (read as game knowledge) in LLMs, especially the smaller models available in Ollama.
 To that end, I want to make a short post on my efforts around collecting data, which I can take advantage of for many future projects!
 </p>
 
-<h3>OSRS Wiki Overview</h3>
+<h2>OSRS Wiki Overview</h2>
 <p>
 The wiki for this game is beloved for how complete and descriptive it is. For almost any given activity, there's an article describing
 how to complete it, efficiently gain experience, or money. There's detailed information on every
@@ -98,6 +113,10 @@ a fixed pool to download, convert, and save. Not much too interesting to dive in
 <h4>Chat vs Agents</h4>
 The fun part here is the difference in using a raw LLM chat vs agentic flows as there's a good example here for what might need
 one vs. the other. <br>
+<figure>
+    <img src="https://i.imgur.com/mDPlZMc.png" alt="Agent vs Chat" style="height: 50%; width: auto; display: block; margin-left: auto; margin-right: auto;">
+    <figcaption>Agent, I command thee</figcaption>
+</figure>
 Prior, we had a relatively static sitemap, where release to release there will be no schema change, and with 
 just one line item example of how to extract the url we need, it generalizes. But, when we have the actual html we're extracting
 we hit an issue with this. We can try to pick specific example docs, ask it to make us a markdown converter for it, then
@@ -106,9 +125,18 @@ In this case, using agents with terminal tools (curl or cat, depending on if goi
 from the web vs already downloaded pages), the trial and error doesn't have to be done by us. Instead essentially just in a while
 loop where you ask "Create a html to markdown converter for the key content under the div id `mw-content-text`, sample documents from the
 wiki_data directory directly and verify against multiple samples whether the conversion was valid markdown and if it's well organized".<br>
+<figure>
+    <img src="https://i.imgur.com/A8kI2GN.png" alt="Agent first pass" style="height: 50%; width: auto; display: block; margin-left: auto; margin-right: auto;">
+    <figcaption>Suggested changes which it will test</figcaption>
+</figure>
 In the end, there is no perfect solution, and "well organized" isn't really a well defined target, but with a limit on the number of 
 executions and trials, we can skip our own iterative feed and instead allow it to refine any number of times until it's "reasonably" organized. 
-This all culminates in <a href="https://github.com/MarkProjectRepo/osrs_wiki_crawl/blob/main/wiki_parser.py" target="_blank">this wiki parser</a>!
+This all culminates in <a href="https://github.com/MarkProjectRepo/osrs_wiki_crawl/blob/main/wiki_parser.py" target="_blank">this wiki parser</a>
+(alongside a sneak peak of my strategy for generating a Q&A dataset for a future post)!
+<figure>
+    <img src="https://i.imgur.com/mvYkeCr.png" alt="Agent vs Chat" style="height: 50%; width: auto; display: block; margin-left: auto; margin-right: auto;">
+    <figcaption>Run this, do that, very bossy</figcaption>
+</figure>
 
 <h3>HTML to Markdown Conversion</h3>
 <p>
@@ -161,4 +189,5 @@ Reach out if you're particularly interested in any of the following, I'll get to
     <li>Automating chat in RuneScape</li>
 </ul>
 
+</section>
 </article>

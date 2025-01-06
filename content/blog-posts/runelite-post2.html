@@ -1,6 +1,19 @@
-<article class="blog">
+<article class="blog" itemscope itemtype="http://schema.org/BlogPosting">
+<meta name="description" content="Learn how to create Python wrappers for RuneLite's Java API, including code examples for type conversion, documentation preservation, and simplified client access.">
+<meta name="keywords" content="RuneLite, Python, Java, API wrapper, RuneScape bot development, py4j, game automation">
+<meta property="og:title" content="Creating Python Wrappers for RuneLite's Java API">
+<meta property="og:description" content="Step-by-step guide to creating Python wrappers for RuneLite's Java API with complete code examples.">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
 
-<h3>Dev Environment</h3>
+<h1 itemprop="headline">Creating Python Wrappers for RuneLite's Java API</h1>
+
+<div itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <meta itemprop="name" content="Mark Traquair">
+</div>
+
+<section itemprop="articleBody">
+<h2>Dev Environment</h2>
 <p>
     So, prior we setup our access to the game's internal API, we can now start collecting data.
     The thing is, for every class we access, we don't really have any hints to the contents unless we go back and forth from the docs.
@@ -127,4 +140,5 @@ Total level: 2075
     Take a look at the <a href="https://github.com/MarkProjectRepo/runelite/blob/master/runelite-python/src/runelite_python/java/api/">Github</a>
     for a preview of the conversions + some previews of what's to come.
 </p>
+</section>
 </article>
