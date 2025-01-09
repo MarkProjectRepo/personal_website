@@ -1124,3 +1124,110 @@ figcaption {
 .line-numbers-rows > span:before {
     color: #666;
 }
+
+.consulting-offerings {
+    margin: 1em 0;
+    padding-left: 1.5em;
+}
+
+.consulting-offerings li {
+    margin: 0.5em 0;
+    line-height: 1.6;
+}
+
+.expertise-section, .cta-section {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1.5em;
+    border-radius: 8px;
+    margin: 1.5em 0;
+}
+
+.contact-options {
+    display: flex;
+    gap: 1em;
+    margin-top: 1em;
+}
+
+.contact-button {
+    display: inline-block;
+    padding: 0.8em 1.5em;
+    background: #007bff;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: background 0.3s ease;
+}
+
+.contact-button:hover {
+    background: #0056b3;
+}
+
+.contact-prompt {
+    margin: 1em 0;
+    font-weight: 600;
+}
+
+.expertise-section ul, .cta-section ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.expertise-section li, .cta-section li {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+    position: relative;
+}
+
+.expertise-section li:before, .cta-section li:before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: #007bff;
+}
+
+.footer-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.footer-section {
+    text-align: center;
+}
+
+.social-links {
+    margin-top: 0.5rem;
+}
+
+.social-links a {
+    color: var(--secondary-color);
+    text-decoration: none;
+    padding: 0 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.social-links a:hover {
+    color: var(--accent-color);
+}
+
+.footer-contact {
+    color: var(--secondary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.footer-contact:hover {
+    color: var(--accent-color);
+}
+
+@media (min-width: 768px) {
+    .footer-content {
+        flex-direction: row;
+        justify-content: space-around;
+    }
+}
